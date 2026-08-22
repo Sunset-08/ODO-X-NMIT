@@ -11,20 +11,18 @@ import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
 
 const loginSchema = z.object({
-  loginId: z.string().min(1, "Login ID or Email is required"),
-  password: z.string().min(1, "Password is required"),
+  email: z.string().email("Invalid admin email address"),
+  password: z.string().min(6, "Password is required"),
 });
 
-export default function LoginPage() {
+export default function AdminLoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
-  const [errors, setErrors] = React.useState<{ loginId?: string; password?: string; form?: string }>({});
-  
-  const [formData, setFormData] = React.useState({ loginId: "", password: "" });
+  const [errors, setErrors] = React.useState<{ email?: string; password?: string; form?: string }>({});
+  const [formData, setFormData] = React.useState({ email: "", password: "" });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.id]: e.target.value }));
-    // Clear field error when typing
     if (errors[e.target.id as keyof typeof errors]) {
       setErrors((prev) => ({ ...prev, [e.target.id]: undefined }));
     }
@@ -34,7 +32,6 @@ export default function LoginPage() {
     e.preventDefault();
     setErrors({});
     
-    // Validate with Zod
     const result = loginSchema.safeParse(formData);
     
     if (!result.success) {
@@ -50,18 +47,14 @@ export default function LoginPage() {
 
     setIsLoading(true);
     
-    // Simulate API call
     setTimeout(() => {
-      // Mock validation logic
-      if (formData.loginId === "admin" && formData.password === "admin") {
+      // Mock validation
+      if (formData.email === "admin@odo.com" && formData.password === "admin123") {
         setIsLoading(false);
         router.push("/admin/dashboard");
-      } else if (formData.loginId && formData.password.length >= 6) {
-        setIsLoading(false);
-        router.push("/dashboard"); // Redirecting employees to /dashboard as requested
       } else {
         setIsLoading(false);
-        setErrors({ form: "Invalid credentials. Please try again." });
+        setErrors({ form: "Invalid admin credentials." });
       }
     }, 1000);
   };
@@ -70,27 +63,25 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2 pb-4">
-          <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
-          <p className="text-sm text-secondary">Access your ODO-X HR account</p>
+          <CardTitle className="text-2xl font-bold">Admin Sign In</CardTitle>
+          <p className="text-sm text-secondary">Authorized access only</p>
         </CardHeader>
         <form onSubmit={handleSubmit} noValidate>
           <CardContent className="space-y-4">
-            
             {errors.form && (
               <div className="p-3 bg-error/10 border border-error text-error text-sm text-center">
                 {errors.form}
               </div>
             )}
-
             <div className="space-y-2">
-              <Label htmlFor="loginId" required>Login Id / Email</Label>
+              <Label htmlFor="email" required>Admin Email</Label>
               <Input 
-                id="loginId" 
-                type="text" 
-                placeholder="e.g. OIJODO20220001 or name@company.com" 
-                value={formData.loginId}
+                id="email" 
+                type="email" 
+                placeholder="admin@odo.com" 
+                value={formData.email}
                 onChange={handleChange}
-                error={errors.loginId}
+                error={errors.email}
               />
             </div>
             <div className="space-y-2">
@@ -108,9 +99,8 @@ export default function LoginPage() {
               Sign In
             </Button>
             <div className="text-sm text-center text-secondary">
-              Don&apos;t have an account?{" "}
-              <Link href="/signup" className="text-accent hover:underline font-medium">
-                Sign Up
+              <Link href="/login" className="text-accent hover:underline font-medium">
+                Return to Employee Login
               </Link>
             </div>
           </CardFooter>

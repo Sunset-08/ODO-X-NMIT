@@ -5,13 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Avatar } from "@/components/ui/avatar";
 
-const navItems = [
-  { name: "Employees", href: "/employees" },
-  { name: "Attendance", href: "/attendance" },
-  { name: "Time Off", href: "/timeoff" },
-];
-
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children, isAdmin = false }: { children: React.ReactNode; isAdmin?: boolean }) {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [status, setStatus] = React.useState<"present" | "absent" | "leave">("absent");
@@ -25,6 +19,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const navItems = isAdmin ? [
+    { name: "Dashboard", href: "/admin/dashboard" },
+    { name: "Employees", href: "/admin/employees" },
+    { name: "Attendance", href: "/admin/attendance" },
+    { name: "Time Off", href: "/admin/time-off" },
+    { name: "Payroll", href: "/admin/payroll" },
+    { name: "Reports", href: "/admin/reports" },
+  ] : [
+    { name: "Dashboard", href: "/dashboard" },
+    { name: "Attendance", href: "/attendance" },
+    { name: "Time Off", href: "/time-off" },
+  ];
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Top Navigation */}
@@ -33,8 +40,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           
           <div className="flex items-center gap-8">
             {/* Company Logo */}
-            <Link href="/" className="font-semibold text-lg tracking-tight text-primary">
+            <Link href={isAdmin ? "/admin/dashboard" : "/dashboard"} className="font-semibold text-lg tracking-tight text-primary flex items-center gap-2">
               ODO India
+              {isAdmin && <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-secondary/10 text-secondary border border-border">ADMIN</span>}
             </Link>
             
             {/* Primary Navigation */}
@@ -57,22 +65,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="relative">
             <button 
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="flex items-center gap-2 focus:outline-none"
+              className="flex items-center gap-2 focus:outline-none hover:opacity-80 transition-opacity"
             >
               <div className={`w-2.5 h-2.5 rounded-full ${getStatusColor()}`} />
-              <Avatar initials="JD" size="sm" />
+              <Avatar initials={isAdmin ? "AD" : "JD"} size="sm" />
             </button>
             
             {/* Dropdown Menu */}
             {isMenuOpen && (
               <div className="absolute right-0 mt-2 w-56 bg-surface border border-border shadow-md py-1 z-20">
                 <div className="px-4 py-2 border-b border-border mb-1">
-                  <p className="text-sm font-medium text-primary">John Doe</p>
-                  <p className="text-xs text-secondary truncate">johndoe@odo.com</p>
+                  <p className="text-sm font-medium text-primary">{isAdmin ? "Admin User" : "John Doe"}</p>
+                  <p className="text-xs text-secondary truncate">{isAdmin ? "admin@odo.com" : "johndoe@odo.com"}</p>
                 </div>
                 
                 <Link 
-                  href="/profile" 
+                  href={isAdmin ? "/admin/profile" : "/profile"} 
                   className="block px-4 py-2 text-sm text-primary hover:bg-background"
                   onClick={() => setIsMenuOpen(false)}
                 >
