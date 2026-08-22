@@ -130,7 +130,7 @@ function SidebarContent({
   pathname: string;
   onClose?: () => void;
 }) {
-  const profileHref = pathname.startsWith("/admin") ? "/admin/profile" : "/profile/DF20220001";
+  const profileHref = pathname.startsWith("/admin") ? "/admin/profile" : "/profile";
 
   return (
     <div className="flex flex-col h-full">
@@ -157,10 +157,10 @@ function SidebarContent({
       </div>
 
       {/* Nav groups */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+      <nav className="flex-1 overflow-y-auto px-3 pt-5 pb-4 space-y-5">
         {navGroups.map((group) => (
           <div key={group.heading}>
-            <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-secondary/70 select-none">
+            <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-secondary/60 select-none">
               {group.heading}
             </p>
             <div className="space-y-0.5">
@@ -305,7 +305,7 @@ function Topbar({
 
               <div className="py-1">
                 <Link
-                  href={isAdmin ? "/admin/profile" : "/profile/DF20220001"}
+                  href={isAdmin ? "/admin/profile" : "/profile"}
                   className="flex items-center gap-2.5 px-3 py-2 text-sm text-text hover:bg-background transition-colors"
                   onClick={() => setProfileOpen(false)}
                   role="menuitem"

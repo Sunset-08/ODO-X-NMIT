@@ -1,60 +1,73 @@
-import * as React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+"use client";
 
-export default function EmployeeDashboardPage() {
+import * as React from "react";
+import { AttendanceWidget } from "@/components/attendance/AttendanceWidget";
+import { EmployeeGrid } from "@/components/employees/EmployeeGrid";
+import { MOCK_EMPLOYEES, CURRENT_USER_ID } from "@/lib/mock-data";
+
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
+function formatDate(date: Date) {
+  return date.toLocaleDateString("en-IN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+// Find the current user's name for the greeting
+const currentUser = MOCK_EMPLOYEES.find((e) => e.id === CURRENT_USER_ID);
+
+export default function EmployeeHomePage() {
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  // Simulate a brief loading phase (remove when real API is wired)
+  React.useEffect(() => {
+    const id = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(id);
+  }, []);
+
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight text-primary">Dashboard</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Attendance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-secondary">Present Days</span>
-                <span className="font-medium text-success">18</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-secondary">Leaves Taken</span>
-                <span className="font-medium text-warning">2</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Time Off Balance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-secondary">Paid Leave</span>
-                <span className="font-medium">12 Days</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-secondary">Sick Leave</span>
-                <span className="font-medium">5 Days</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm text-secondary">
-              <p>Checked in at 09:05 AM today</p>
-              <p className="mt-2">Leave request approved yesterday</p>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Page header: greeting + date */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-text">
+            {getGreeting()},{" "}
+            <span className="text-primary">{currentUser?.name.split(" ")[0] ?? "there"}</span>
+          </h1>
+          <p className="text-sm text-secondary mt-0.5">{formatDate(new Date())}</p>
+        </div>
       </div>
+
+      {/* Attendance widget */}
+      <AttendanceWidget />
+
+      {/* Employee directory */}
+      <section aria-labelledby="directory-heading">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 id="directory-heading" className="text-base font-semibold text-text">
+              People
+            </h2>
+            <p className="text-xs text-secondary mt-0.5">
+              {MOCK_EMPLOYEES.length} employees · click a card to view their profile
+            </p>
+          </div>
+        </div>
+
+        <EmployeeGrid
+          employees={MOCK_EMPLOYEES}
+          currentUserId={CURRENT_USER_ID}
+          isLoading={isLoading}
+        />
+      </section>
     </div>
   );
 }

@@ -1,199 +1,333 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
+import { ArrowLeft, Camera, Check, X, Lock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ImageUpload } from "@/components/ui/image-upload";
+import { Skeleton } from "@/components/ui/skeleton";
+import { MOCK_EMPLOYEES, CURRENT_USER_ID } from "@/lib/mock-data";
 
-export default function ProfilePage() {
-  const [activeTab, setActiveTab] = React.useState("info");
-  const [isEditing, setIsEditing] = React.useState(false);
+type EditableFields = { phone: string; address: string };
 
-  // Mock employee data
-  const [formData, setFormData] = React.useState({
-    phone: "+91 9876543210",
-    address: "123 Tech Park, Bengaluru, Karnataka",
-  });
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-xs font-medium text-secondary uppercase tracking-wide">{label}</span>
+      <span className="text-sm text-text">{value || "—"}</span>
+    </div>
+  );
+}
+
+function LockedField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-1.5">
+        <span className="text-xs font-medium text-secondary">{label}</span>
+        <Lock size={10} className="text-secondary/60" />
+      </div>
+      <div className="h-9 px-3 flex items-center bg-background border border-border rounded-[8px] text-sm text-secondary select-none">
+        {value || "—"}
+      </div>
+    </div>
+  );
+}
+
+function AvatarEdit({
+  initials,
+  preview,
+  onFileChange,
+}: {
+  initials: string;
+  preview: string | null;
+  onFileChange: (file: File) => void;
+}) {
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { alert("Image must be under 5 MB"); return; }
+    if (!file.type.startsWith("image/")) { alert("Please select an image file"); return; }
+    onFileChange(file);
+  };
 
   return (
-    <div className="flex flex-col gap-6 max-w-5xl mx-auto">
-      
-      {/* Profile Header */}
+    <div className="flex flex-col items-center gap-2">
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        className="relative group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full"
+        aria-label="Change profile picture"
+      >
+        {preview ? (
+          <img src={preview} alt="Profile" className="w-20 h-20 rounded-full object-cover border-2 border-border" />
+        ) : (
+          <Avatar initials={initials} className="w-20 h-20 text-xl" />
+        )}
+        <span className="absolute inset-0 rounded-full bg-text/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <Camera size={16} className="text-white" />
+        </span>
+      </button>
+      <button type="button" onClick={() => inputRef.current?.click()} className="text-xs text-accent hover:text-primary font-medium transition-colors">
+        Change photo
+      </button>
+      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleChange} />
+    </div>
+  );
+}
+
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="text-sm font-semibold text-text uppercase tracking-wide border-b border-border pb-2 mb-4">
+      {children}
+    </h2>
+  );
+}
+
+function ProfileSkeleton() {
+  return (
+    <div className="flex flex-col gap-6 max-w-3xl">
       <Card>
-        <CardContent className="p-6 md:p-8 flex flex-col md:flex-row gap-8 items-start">
-          
-          <div className="flex flex-col items-center gap-4 min-w-[200px]">
+        <CardContent className="p-6">
+          <div className="flex gap-6 items-start">
+            <Skeleton className="w-20 h-20 rounded-full shrink-0" />
+            <div className="flex flex-col gap-2 flex-1">
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-3.5 w-28" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex flex-col gap-2">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-9 w-full" />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function MyProfilePage() {
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [saveSuccess, setSaveSuccess] = React.useState(false);
+  const [avatarPreview, setAvatarPreview] = React.useState<string | null>(null);
+  const [pendingAvatarFile, setPendingAvatarFile] = React.useState<File | null>(null);
+
+  const [saved, setSaved] = React.useState<EditableFields>({
+    phone: "+91 9876543210",
+    address: "123 Tech Park, Bengaluru, Karnataka — 560001",
+  });
+  const [draft, setDraft] = React.useState<EditableFields>(saved);
+  const [errors, setErrors] = React.useState<Partial<EditableFields>>({});
+
+  const employee = MOCK_EMPLOYEES.find((e) => e.id === CURRENT_USER_ID);
+
+  React.useEffect(() => {
+    const t = setTimeout(() => setIsLoading(false), 600);
+    return () => clearTimeout(t);
+  }, []);
+
+  function startEditing() { setDraft(saved); setErrors({}); setSaveSuccess(false); setIsEditing(true); }
+
+  function cancelEditing() {
+    setDraft(saved); setAvatarPreview(null); setPendingAvatarFile(null); setErrors({}); setIsEditing(false);
+  }
+
+  function validate(): boolean {
+    const e: Partial<EditableFields> = {};
+    if (!draft.phone.trim()) e.phone = "Phone number is required";
+    if (!draft.address.trim()) e.address = "Address is required";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
+
+  function handleSave() {
+    if (!validate()) return;
+    setIsSaving(true);
+    setTimeout(() => {
+      setSaved(draft);
+      setIsSaving(false);
+      setIsEditing(false);
+      setSaveSuccess(true);
+      setAvatarPreview(null);
+      setPendingAvatarFile(null);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    }, 900);
+  }
+
+  if (isLoading) return <ProfileSkeleton />;
+
+  if (!employee) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-2">
+        <p className="text-sm font-medium text-text">Profile not found.</p>
+        <Link href="/dashboard" className="text-xs text-accent hover:underline">← Back to Home</Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-6 max-w-3xl">
+
+      <div>
+        <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-secondary hover:text-primary transition-colors">
+          <ArrowLeft size={14} />
+          Back to Home
+        </Link>
+      </div>
+
+      {/* Header */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
             {isEditing ? (
-              <ImageUpload />
+              <AvatarEdit initials={employee.initials} preview={avatarPreview} onFileChange={(f) => { setPendingAvatarFile(f); setAvatarPreview(URL.createObjectURL(f)); }} />
             ) : (
-              <Avatar initials="JD" className="w-24 h-24 text-2xl" />
-            )}
-            {!isEditing && (
-              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                Edit Profile
-              </Button>
-            )}
-          </div>
-
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-            <div className="flex flex-col gap-4">
-              <h2 className="text-2xl font-semibold text-primary">John Doe</h2>
-              
-              <div className="flex flex-col gap-3 mt-2">
-                <div className="grid grid-cols-[80px_1fr] items-center gap-2 text-sm">
-                  <span className="text-secondary font-medium">Login ID</span>
-                  <span className="text-primary border-b border-border pb-1">EMP2024001</span>
-                </div>
-                <div className="grid grid-cols-[80px_1fr] items-center gap-2 text-sm">
-                  <span className="text-secondary font-medium">Email</span>
-                  <span className="text-primary border-b border-border pb-1">johndoe@odo.com</span>
-                </div>
-                <div className="grid grid-cols-[80px_1fr] items-center gap-2 text-sm">
-                  <span className="text-secondary font-medium">Mobile</span>
-                  {isEditing ? (
-                    <Input 
-                      value={formData.phone} 
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})} 
-                      className="h-7 text-sm"
-                    />
-                  ) : (
-                    <span className="text-primary border-b border-border pb-1">{formData.phone}</span>
-                  )}
-                </div>
+              <div className="shrink-0">
+                {avatarPreview
+                  ? <img src={avatarPreview} alt="Profile" className="w-20 h-20 rounded-full object-cover border-2 border-border" />
+                  : <Avatar initials={employee.initials} className="w-20 h-20 text-xl" />
+                }
               </div>
+            )}
+
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl font-semibold text-text">{employee.name}</h1>
+              <p className="text-sm text-secondary mt-0.5">{employee.role}</p>
+              <p className="text-xs text-secondary mt-1">{employee.id} · {employee.department} · {employee.location}</p>
             </div>
 
-            <div className="flex flex-col gap-4">
-              <div className="h-8 hidden md:block"></div>
-              <div className="flex flex-col gap-3 mt-2">
-                <div className="grid grid-cols-[80px_1fr] items-center gap-2 text-sm">
-                  <span className="text-secondary font-medium">Department</span>
-                  <span className="text-primary border-b border-border pb-1">Engineering</span>
-                </div>
-                <div className="grid grid-cols-[80px_1fr] items-center gap-2 text-sm">
-                  <span className="text-secondary font-medium">Manager</span>
-                  <span className="text-primary border-b border-border pb-1">Diana Prince</span>
-                </div>
-                <div className="grid grid-cols-[80px_1fr] items-start gap-2 text-sm">
-                  <span className="text-secondary font-medium pt-1">Address</span>
-                  {isEditing ? (
-                    <Input 
-                      value={formData.address} 
-                      onChange={(e) => setFormData({...formData, address: e.target.value})} 
-                      className="h-7 text-sm"
-                    />
-                  ) : (
-                    <span className="text-primary border-b border-border pb-1">{formData.address}</span>
-                  )}
-                </div>
-              </div>
+            <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+              {saveSuccess && (
+                <span className="flex items-center gap-1 text-xs text-success font-medium">
+                  <Check size={13} /> Saved
+                </span>
+              )}
+              {isEditing ? (
+                <>
+                  <Button variant="outline" size="sm" onClick={cancelEditing} disabled={isSaving} className="flex items-center gap-1.5">
+                    <X size={13} /> Cancel
+                  </Button>
+                  <Button size="sm" onClick={handleSave} isLoading={isSaving} className="flex items-center gap-1.5">
+                    <Check size={13} /> Save changes
+                  </Button>
+                </>
+              ) : (
+                <Button variant="outline" size="sm" onClick={startEditing}>Edit Profile</Button>
+              )}
             </div>
           </div>
-          
-          {isEditing && (
-            <div className="w-full flex justify-end gap-2 mt-4 md:mt-0 md:absolute md:top-8 md:right-8">
-              <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>Cancel</Button>
-              <Button size="sm" onClick={() => setIsEditing(false)}>Save</Button>
-            </div>
-          )}
         </CardContent>
       </Card>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-6 border-b border-border mt-2">
-        <button
-          onClick={() => setActiveTab("info")}
-          className={`pb-3 text-sm font-medium transition-colors border-b-2 ${
-            activeTab === "info" ? "border-primary text-primary" : "border-transparent text-secondary hover:text-primary"
-          }`}
-        >
-          General Info
-        </button>
-        <button
-          onClick={() => setActiveTab("salary")}
-          className={`pb-3 text-sm font-medium transition-colors border-b-2 ${
-            activeTab === "salary" ? "border-primary text-primary" : "border-transparent text-secondary hover:text-primary"
-          }`}
-        >
-          Salary Info
-        </button>
-      </div>
+      {/* Personal Information */}
+      <Card>
+        <CardContent className="p-6">
+          <SectionHeading>Personal Information</SectionHeading>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <LockedField label="Email" value={employee.email} />
 
-      {/* Tab Content */}
-      <div className="py-2">
-        {activeTab === "info" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="font-semibold text-primary mb-4 border-b border-border pb-2">Skills</h3>
-                <ul className="text-sm text-secondary flex flex-col gap-2">
-                  <li>React / Next.js</li>
-                  <li>TypeScript</li>
-                  <li>PostgreSQL</li>
-                </ul>
-              </CardContent>
-            </Card>
+            {isEditing ? (
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  value={draft.phone}
+                  onChange={(e) => { setDraft((d) => ({ ...d, phone: e.target.value })); if (errors.phone) setErrors((err) => ({ ...err, phone: undefined })); }}
+                  placeholder="+91 XXXXX XXXXX"
+                  error={errors.phone}
+                />
+              </div>
+            ) : (
+              <InfoRow label="Phone" value={saved.phone} />
+            )}
+
+            <div className="sm:col-span-2">
+              {isEditing ? (
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="address">Address</Label>
+                  <Input
+                    id="address"
+                    value={draft.address}
+                    onChange={(e) => { setDraft((d) => ({ ...d, address: e.target.value })); if (errors.address) setErrors((err) => ({ ...err, address: undefined })); }}
+                    placeholder="Your full address"
+                    error={errors.address}
+                  />
+                </div>
+              ) : (
+                <InfoRow label="Address" value={saved.address} />
+              )}
+            </div>
           </div>
-        )}
+        </CardContent>
+      </Card>
 
-        {activeTab === "salary" && (
-          <div className="flex flex-col gap-6">
-            <div className="bg-surface border border-border p-4 rounded-sm">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-8">
-                <div>
-                  <Label className="text-xs text-secondary block mb-1">Month Wage</Label>
-                  <p className="font-medium text-lg">₹50,000</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-secondary block mb-1">Yearly Wage</Label>
-                  <p className="font-medium text-lg">₹600,000</p>
-                </div>
+      {/* Job Information */}
+      <Card>
+        <CardContent className="p-6">
+          <SectionHeading>Job Information</SectionHeading>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <InfoRow label="Department" value={employee.department} />
+            <InfoRow label="Job Title" value={employee.role} />
+            <InfoRow label="Employee ID" value={employee.id} />
+            <InfoRow label="Location" value={employee.location} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Salary */}
+      <Card>
+        <CardContent className="p-6">
+          <SectionHeading>Salary Structure</SectionHeading>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-5 mb-5">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-xs font-medium text-secondary uppercase tracking-wide">Monthly</span>
+              <span className="text-lg font-semibold text-text">₹50,000</span>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-xs font-medium text-secondary uppercase tracking-wide">Annual</span>
+              <span className="text-lg font-semibold text-text">₹6,00,000</span>
+            </div>
+          </div>
+          <div className="border-t border-border pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs font-semibold text-secondary mb-3">Earnings</p>
+              <div className="flex flex-col gap-2">
+                {[["Basic Salary","₹25,000"],["House Rent Allowance","₹12,500"],["Special Allowance","₹12,500"]].map(([l,v]) => (
+                  <div key={l} className="flex justify-between text-sm">
+                    <span className="text-secondary">{l}</span>
+                    <span className="font-medium text-text">{v}</span>
+                  </div>
+                ))}
               </div>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-semibold text-primary mb-4 border-b border-border pb-2">Earnings</h3>
-                  <div className="flex flex-col gap-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-secondary">Basic Salary</span>
-                      <span className="font-medium">₹25,000</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-secondary">House Rent Allowance</span>
-                      <span className="font-medium">₹12,500</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-secondary">Special Allowance</span>
-                      <span className="font-medium">₹12,500</span>
-                    </div>
+            <div>
+              <p className="text-xs font-semibold text-secondary mb-3">Deductions</p>
+              <div className="flex flex-col gap-2">
+                {[["Provident Fund","₹1,800"],["Professional Tax","₹200"]].map(([l,v]) => (
+                  <div key={l} className="flex justify-between text-sm">
+                    <span className="text-secondary">{l}</span>
+                    <span className="font-medium text-text">{v}</span>
                   </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-semibold text-primary mb-4 border-b border-border pb-2">Deductions</h3>
-                  <div className="flex flex-col gap-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-secondary">Provident Fund (PF)</span>
-                      <span className="font-medium">₹1,800</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-secondary">Professional Tax</span>
-                      <span className="font-medium">₹200</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                ))}
+              </div>
             </div>
           </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
+
     </div>
   );
 }

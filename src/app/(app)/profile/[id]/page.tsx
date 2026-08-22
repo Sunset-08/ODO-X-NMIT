@@ -1,72 +1,153 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
+import { ArrowLeft, EyeOff, Building2, MapPin, Mail, Phone } from "lucide-react";
 import { useParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmployeeStatusBadge } from "@/components/employees/EmployeeStatusBadge";
+import { MOCK_EMPLOYEES, CURRENT_USER_ID } from "@/lib/mock-data";
 
-export default function ProfilePage() {
+/* ─────────────────────────────────────────────────────────────
+   Sub-components
+───────────────────────────────────────────────────────────── */
+
+function InfoItem({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="w-8 h-8 rounded-[8px] bg-accent-light flex items-center justify-center shrink-0">
+        <Icon size={14} className="text-primary" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs text-secondary">{label}</p>
+        <p className="text-sm font-medium text-text truncate">{value || "—"}</p>
+      </div>
+    </div>
+  );
+}
+
+function LabeledValue({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-xs font-medium text-secondary uppercase tracking-wide">{label}</span>
+      <span className="text-sm text-text">{value || "—"}</span>
+    </div>
+  );
+}
+
+function ProfileSkeleton() {
+  return (
+    <div className="flex flex-col gap-6 max-w-3xl">
+      <Card>
+        <CardContent className="p-6 flex gap-6 items-start">
+          <Skeleton className="w-20 h-20 rounded-full shrink-0" />
+          <div className="flex flex-col gap-2 flex-1">
+            <Skeleton className="h-5 w-44" />
+            <Skeleton className="h-3.5 w-32" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+        </CardContent>
+      </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}>
+            <CardContent className="p-5 flex gap-3 items-start">
+              <Skeleton className="w-8 h-8 rounded-[8px] shrink-0" />
+              <div className="flex flex-col gap-1.5 flex-1">
+                <Skeleton className="h-3 w-14" />
+                <Skeleton className="h-3.5 w-28" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Page
+───────────────────────────────────────────────────────────── */
+
+export default function EmployeeProfilePage() {
   const params = useParams();
   const id = params.id as string;
-  const [activeTab, setActiveTab] = React.useState("resume");
+  const [isLoading, setIsLoading] = React.useState(true);
 
-  // In a real app, fetch employee data based on ID
-  const isAdmin = true; // Mock admin state to show salary tab
+  const employee = MOCK_EMPLOYEES.find((e) => e.id === id);
+  const isSelf = id === CURRENT_USER_ID;
+
+  React.useEffect(() => {
+    const t = setTimeout(() => setIsLoading(false), 500);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (isLoading) return <ProfileSkeleton />;
+
+  if (!employee) {
+    return (
+      <div className="flex flex-col max-w-3xl gap-4">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1.5 text-sm text-secondary hover:text-primary transition-colors"
+        >
+          <ArrowLeft size={14} />
+          Back to Home
+        </Link>
+        <div className="flex flex-col items-center justify-center py-20 gap-2">
+          <p className="text-sm font-medium text-text">Employee not found.</p>
+          <p className="text-xs text-secondary">No employee with ID &quot;{id}&quot; exists.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col gap-6 max-w-5xl mx-auto">
-      
-      {/* Profile Header */}
+    <div className="flex flex-col gap-6 max-w-3xl">
+
+      {/* Back + view-only badge */}
+      <div className="flex items-center justify-between">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1.5 text-sm text-secondary hover:text-primary transition-colors"
+        >
+          <ArrowLeft size={14} />
+          Back to Home
+        </Link>
+        {!isSelf && (
+          <span className="inline-flex items-center gap-1.5 text-xs text-secondary border border-border rounded-full px-3 py-1">
+            <EyeOff size={11} />
+            View only
+          </span>
+        )}
+      </div>
+
+      {/* Profile header */}
       <Card>
-        <CardContent className="p-6 md:p-8 flex flex-col md:flex-row gap-8 items-start">
-          
-          <div className="flex flex-col items-center gap-4 min-w-[200px]">
-            <Avatar initials="AJ" className="w-24 h-24 text-2xl" />
-            <button className="text-xs text-secondary hover:text-primary transition-colors flex items-center gap-1 border border-border px-3 py-1 rounded-sm">
-              <span>✏️</span> Edit Picture
-            </button>
-          </div>
-
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-            <div className="flex flex-col gap-4">
-              <h2 className="text-2xl font-semibold text-primary">Alice Johnson</h2>
-              
-              <div className="flex flex-col gap-3 mt-2">
-                <div className="grid grid-cols-[80px_1fr] items-center gap-2 text-sm">
-                  <span className="text-secondary font-medium">Login ID</span>
-                  <span className="text-primary border-b border-border pb-1">DF20220001</span>
+        <CardContent className="p-6">
+          <div className="flex flex-col sm:flex-row gap-5 items-start sm:items-center">
+            <Avatar initials={employee.initials} className="w-20 h-20 text-xl shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start gap-3 flex-wrap">
+                <div className="min-w-0">
+                  <h1 className="text-xl font-semibold text-text">{employee.name}</h1>
+                  <p className="text-sm text-secondary ">{employee.role}</p>
+                  <p className="text-xs text-secondary mt-1">
+                    {employee.id} · {employee.department}
+                  </p>
                 </div>
-                <div className="grid grid-cols-[80px_1fr] items-center gap-2 text-sm">
-                  <span className="text-secondary font-medium">Email</span>
-                  <span className="text-primary border-b border-border pb-1">alice@dayflow.com</span>
-                </div>
-                <div className="grid grid-cols-[80px_1fr] items-center gap-2 text-sm">
-                  <span className="text-secondary font-medium">Mobile</span>
-                  <span className="text-primary border-b border-border pb-1">+91 9876543210</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-4">
-              <div className="h-8 hidden md:block"></div> {/* Spacer to align with name */}
-              <div className="flex flex-col gap-3 mt-2">
-                <div className="grid grid-cols-[80px_1fr] items-center gap-2 text-sm">
-                  <span className="text-secondary font-medium">Company</span>
-                  <span className="text-primary border-b border-border pb-1">DayFlow India</span>
-                </div>
-                <div className="grid grid-cols-[80px_1fr] items-center gap-2 text-sm">
-                  <span className="text-secondary font-medium">Department</span>
-                  <span className="text-primary border-b border-border pb-1">Engineering</span>
-                </div>
-                <div className="grid grid-cols-[80px_1fr] items-center gap-2 text-sm">
-                  <span className="text-secondary font-medium">Manager</span>
-                  <span className="text-primary border-b border-border pb-1">Diana Prince</span>
-                </div>
-                <div className="grid grid-cols-[80px_1fr] items-center gap-2 text-sm">
-                  <span className="text-secondary font-medium">Location</span>
-                  <span className="text-primary border-b border-border pb-1">Bengaluru</span>
+                <div className="mt-1">
+                  <EmployeeStatusBadge status={employee.status} />
                 </div>
               </div>
             </div>
@@ -74,171 +155,75 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-6 border-b border-border mt-2">
-        {["resume", "private", "salary"].map((tab) => {
-          if (tab === "salary" && !isAdmin) return null;
-          
-          const labels: Record<string, string> = {
-            resume: "Resume",
-            private: "Private Info",
-            salary: "Salary Info"
-          };
-          
-          return (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`pb-3 text-sm font-medium transition-colors border-b-2 ${
-                activeTab === tab 
-                  ? "border-primary text-primary" 
-                  : "border-transparent text-secondary hover:text-primary"
-              }`}
-            >
-              {labels[tab]}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Tab Content */}
-      <div className="py-2">
-        {activeTab === "resume" && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2 flex flex-col gap-6">
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-semibold text-primary mb-4 border-b border-border pb-2">About</h3>
-                  <p className="text-sm text-secondary leading-relaxed">
-                    Senior Software Engineer with 5+ years of experience building scalable enterprise applications. 
-                    Passionate about clean code, architecture, and mentoring junior developers.
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-semibold text-primary mb-4 border-b border-border pb-2">What I love about my job</h3>
-                  <p className="text-sm text-secondary leading-relaxed">
-                    Collaborating with cross-functional teams to solve complex problems and seeing the direct impact of our work on the end users.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <div className="flex flex-col gap-6">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-center mb-4 border-b border-border pb-2">
-                    <h3 className="font-semibold text-primary">Skills</h3>
-                    <button className="text-xs text-accent hover:text-accent-hover font-medium">+ Add Skills</button>
-                  </div>
-                  <ul className="text-sm text-secondary flex flex-col gap-2">
-                    <li>React / Next.js</li>
-                    <li>TypeScript</li>
-                    <li>PostgreSQL</li>
-                    <li>System Design</li>
-                  </ul>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-center mb-4 border-b border-border pb-2">
-                    <h3 className="font-semibold text-primary">Certification</h3>
-                    <button className="text-xs text-accent hover:text-accent-hover font-medium">+ Add Cert</button>
-                  </div>
-                  <ul className="text-sm text-secondary flex flex-col gap-2">
-                    <li>AWS Solutions Architect</li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        )}
-
-        {activeTab === "salary" && (
-          <div className="flex flex-col gap-6">
-            <div className="flex justify-between items-center bg-surface border border-border p-4">
-              <div className="grid grid-cols-3 gap-8 w-full max-w-2xl">
-                <div>
-                  <Label className="text-xs text-secondary block mb-1">Month Wage</Label>
-                  <p className="font-medium">50,000 <span className="text-xs text-secondary font-normal">/ Month</span></p>
-                </div>
-                <div>
-                  <Label className="text-xs text-secondary block mb-1">Yearly Wage</Label>
-                  <p className="font-medium">600,000 <span className="text-xs text-secondary font-normal">/ Yearly</span></p>
-                </div>
-                <div>
-                  <Label className="text-xs text-secondary block mb-1">Working days in week</Label>
-                  <Input defaultValue="5" className="h-7 w-16" />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-semibold text-primary mb-4 border-b border-border pb-2">Salary Components</h3>
-                  
-                  <div className="flex flex-col gap-4">
-                    <div className="flex justify-between items-center">
-                      <div className="flex-1 text-sm font-medium">Basic Salary</div>
-                      <div className="flex items-center gap-2">
-                        <Input defaultValue="25000" className="w-24 h-8 text-right" />
-                        <span className="text-xs text-secondary">/ month</span>
-                        <span className="text-xs text-secondary ml-4 w-12 text-right">50.00 %</span>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex-1 text-sm font-medium">House Rent Allowance</div>
-                      <div className="flex items-center gap-2">
-                        <Input defaultValue="12500" className="w-24 h-8 text-right" />
-                        <span className="text-xs text-secondary">/ month</span>
-                        <span className="text-xs text-secondary ml-4 w-12 text-right">25.00 %</span>
-                      </div>
-                    </div>
-                    {/* Additional components... */}
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <div className="flex flex-col gap-6">
-                <Card>
-                  <CardContent className="p-6">
-                    <h3 className="font-semibold text-primary mb-4 border-b border-border pb-2">Provident Fund (PF) Contribution</h3>
-                    <div className="flex flex-col gap-4">
-                      <div className="flex justify-between items-center text-sm">
-                        <span>Employee</span>
-                        <span>3,000 / month</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span>Employer</span>
-                        <span>3,000 / month</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-6">
-                    <h3 className="font-semibold text-primary mb-4 border-b border-border pb-2">Tax Deductions</h3>
-                    <div className="flex justify-between items-center text-sm">
-                      <span>Professional Tax</span>
-                      <span>200 / month</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {activeTab === "private" && (
+      {/* Contact */}
+      <div>
+        <h2 className="text-xs font-semibold text-secondary uppercase tracking-wide mb-3">
+          Contact
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Card>
-            <CardContent className="p-6">
-              <p className="text-sm text-secondary">Private information is restricted.</p>
+            <CardContent className="min-h-[84px] flex items-center p-5">
+              <InfoItem icon={Mail} label="Email" value={employee.email} />
             </CardContent>
           </Card>
-        )}
+          <Card>
+            <CardContent className="min-h-[84px] flex items-center p-5">
+              <InfoItem icon={Phone} label="Phone" value="+91 9876543210" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="min-h-[84px] flex items-center p-5">
+              <InfoItem icon={MapPin} label="Location" value={employee.location} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="min-h-[84px] flex items-center p-5">
+              <InfoItem icon={Building2} label="Department" value={employee.department} />
+            </CardContent>
+          </Card>
+        </div>
       </div>
+
+      {/* Job details */}
+      <div>
+        <h2 className="text-xs font-semibold text-secondary uppercase tracking-wide mb-3">
+          Job Details
+        </h2>
+        <Card>
+          <CardContent className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <LabeledValue label="Employee ID" value={employee.id} />
+            <LabeledValue label="Job Title" value={employee.role} />
+            <LabeledValue label="Department" value={employee.department} />
+            <LabeledValue label="Location" value={employee.location} />
+            <LabeledValue label="Employment Type" value="Full-time" />
+            <LabeledValue
+              label="Status"
+              value={
+                employee.status === "leave"
+                  ? "On Leave"
+                  : "Active"
+              }
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Salary — hidden for privacy */}
+      <div>
+        <h2 className="text-xs font-semibold text-secondary uppercase tracking-wide mb-3">
+          Salary Information
+        </h2>
+        <Card>
+          <CardContent className="p-6 flex flex-col items-center justify-center py-10 gap-2 text-center">
+            <EyeOff size={28} className="text-border" strokeWidth={1.5} />
+            <p className="text-sm font-medium text-text">Salary details are private</p>
+            <p className="text-xs text-secondary max-w-xs">
+              Salary information is only visible to the employee and authorized HR personnel.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
     </div>
   );
 }
