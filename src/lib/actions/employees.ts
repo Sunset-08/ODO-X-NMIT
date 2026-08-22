@@ -81,6 +81,16 @@ export async function createEmployee(formData: FormData) {
   }
 }
 
+// useActionState-compatible wrapper — returns { success } or { error } instead of redirecting
+export async function createEmployeeAction(
+  _prev: { error?: string; success?: boolean } | null,
+  formData: FormData
+): Promise<{ error?: string; success?: boolean }> {
+  const result = await createEmployee(formData);
+  if ("error" in result) return { error: result.error };
+  return { success: true };
+}
+
 export async function getMyProfile() {
   // TODO: replace with session user once auth lands
   const currentUserId = 1;

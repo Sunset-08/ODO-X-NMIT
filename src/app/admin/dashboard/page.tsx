@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import {
   getAdminDashboardStats,
   getPendingLeaveRequests,
-  approveLeaveRequest,
-  rejectLeaveRequest,
 } from "@/lib/actions/leave";
+import { LeaveRequestList } from "./leave-request-list";
+
 
 export default async function AdminDashboardPage() {
   const [stats, pendingRequests] = await Promise.all([
@@ -59,34 +59,7 @@ export default async function AdminDashboardPage() {
             <CardTitle>Recent Leave Requests</CardTitle>
           </CardHeader>
           <CardContent>
-            {pendingRequests.length === 0 ? (
-              <p className="text-sm text-secondary py-4 text-center">No pending requests.</p>
-            ) : (
-              <div className="flex flex-col gap-4">
-                {pendingRequests.map((req) => (
-                  <div key={req.id} className="flex justify-between items-center pb-4 border-b border-border last:border-0 last:pb-0">
-                    <div>
-                      <p className="text-sm font-medium text-primary">{req.employeeName}</p>
-                      <p className="text-xs text-secondary">
-                        {req.typeName} &bull;{" "}
-                        {new Date(req.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                        {" – "}
-                        {new Date(req.endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                        {" "}({req.totalDays}d)
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <form action={async () => { "use server"; await rejectLeaveRequest(req.id); }}>
-                        <Button variant="outline" size="sm" className="h-7 text-xs px-2" type="submit">Reject</Button>
-                      </form>
-                      <form action={async () => { "use server"; await approveLeaveRequest(req.id); }}>
-                        <Button size="sm" className="h-7 text-xs px-2" type="submit">Approve</Button>
-                      </form>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <LeaveRequestList requests={pendingRequests} />
             <div className="mt-4 pt-2">
               <Link href="/admin/time-off" className="text-sm text-accent hover:underline">View all requests</Link>
             </div>
