@@ -1,0 +1,748 @@
+// ============================================================
+// Dayflow HRMS -- Prisma Schema
+// ERD Source: Dayflow Eraser DB Design v2 (finalized)
+// Generated: 2026-08-22
+// Database: PostgreSQL 14+
+// Prisma: 7.x (prisma.config.ts holds the connection URL)
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum UserRole {
+  admin
+  hr
+  employee
+}
+
+enum UserStatus {
+  active
+  inactive
+  suspended
+}
+
+enum TokenPurpose {
+  email_verification
+  password_reset
+}
+
+enum Gender {
+  male
+  female
+  other
+  undisclosed
+}
+
+enum EmploymentType {
+  full_time
+  part_time
+  contract
+  intern
+}
+
+enum EmploymentStatus {
+  active
+  on_leave
+  terminated
+}
+
+enum EmploymentChangeType {
+  hire
+  promotion
+  transfer
+  manager_change
+  type_change
+  termination
+}
+
+enum HolidayType {
+  public_holiday
+  optional
+  company
+}
+
+enum HolidayAppliesTo {
+  all
+  location
+  department
+}
+
+enum AttendanceStatus {
+  present
+  absent
+  half_day
+  leave
+  holiday
+  weekend
+}
+
+enum AttendanceSource {
+  web
+  biometric
+  manual
+  import
+}
+
+enum LeavePortion {
+  full
+  first_half
+  second_half
+}
+
+enum LeaveRequestStatus {
+  pending
+  approved
+  rejected
+  cancelled
+}
+
+enum RegularizationStatus {
+  pending
+  approved
+  rejected
+}
+
+enum RegularizationRequestedStatus {
+  present
+  half_day
+}
+
+enum ComponentType {
+  earning
+  deduction
+}
+
+enum CalculationType {
+  fixed
+  percentage
+}
+
+enum PayrollRunStatus {
+  draft
+  processing
+  completed
+  cancelled
+}
+
+enum PayslipStatus {
+  draft
+  published
+}
+
+enum PaymentStatus {
+  unpaid
+  paid
+  failed
+}
+
+enum AnnouncementAudience {
+  all
+  department
+  role
+}
+
+enum NotificationChannel {
+  in_app
+  email
+}
+
+enum DocType {
+  id_proof
+  contract
+  certificate
+  other
+}
+
+// ============================================================
+// IDENTITY & AUTH (blue)
+// ============================================================
+
+model User {
+  id                BigInt     @id @default(autoincrement())
+  employeeCode      String     @unique @map("employee_code")
+  email             String     @unique
+  passwordHash      String     @map("password_hash")
+  role              UserRole
+  isEmailVerified   Boolean    @default(false) @map("is_email_verified")
+  status            UserStatus
+  passwordUpdatedAt DateTime?  @map("password_updated_at") @db.Timestamptz(6)
+  failedLoginCount  Int        @default(0) @map("failed_login_count")
+  lockedUntil       DateTime?  @map("locked_until") @db.Timestamptz(6)
+  lastLoginAt       DateTime?  @map("last_login_at") @db.Timestamptz(6)
+  createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt         DateTime?  @map("deleted_at") @db.Timestamptz(6)
+
+  employee                          Employee?
+  authTokens                        AuthToken[]
+  userSessions                      UserSession[]
+  loginAttempts                     LoginAttempt[]
+  employmentHistoriesChanged        EmploymentHistory[]        @relation("ChangedByUser")
+  documentsUploaded                 Document[]                 @relation("UploadedByUser")
+  documentsVerified                 Document[]                 @relation("VerifiedByUser")
+  holidaysCreated                   Holiday[]                  @relation("CreatedByUser")
+  attendancesApproved               Attendance[]               @relation("ApprovedByUser")
+  attendanceRegularizationsReviewed AttendanceRegularization[] @relation("ReviewedByUser")
+  leaveRequestsReviewed             LeaveRequest[]             @relation("ReviewedByUser")
+  salaryStructuresCreated           SalaryStructure[]          @relation("CreatedByUser")
+  payrollRunsProcessed              PayrollRun[]               @relation("ProcessedByUser")
+  announcementsPublished            Announcement[]             @relation("PublishedByUser")
+  notifications                     Notification[]
+  activityLogs                      ActivityLog[]
+
+  @@index([status])
+  @@map("users")
+}
+
+model AuthToken {
+  id         BigInt       @id @default(autoincrement())
+  userId     BigInt       @map("user_id")
+  tokenHash  String       @map("token_hash")
+  purpose    TokenPurpose
+  expiresAt  DateTime     @map("expires_at") @db.Timestamptz(6)
+  consumedAt DateTime?    @map("consumed_at") @db.Timestamptz(6)
+  createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("auth_tokens")
+}
+
+model UserSession {
+  id               BigInt    @id @default(autoincrement())
+  userId           BigInt    @map("user_id")
+  refreshTokenHash String    @unique @map("refresh_token_hash")
+  ipAddress        String    @map("ip_address")
+  userAgent        String    @map("user_agent")
+  deviceLabel      String?   @map("device_label")
+  issuedAt         DateTime  @map("issued_at") @db.Timestamptz(6)
+  lastSeenAt       DateTime  @map("last_seen_at") @db.Timestamptz(6)
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz(6)
+  revokedAt        DateTime? @map("revoked_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_sessions")
+}
+
+model LoginAttempt {
+  id            BigInt   @id @default(autoincrement())
+  userId        BigInt?  @map("user_id")
+  email         String
+  wasSuccessful Boolean  @map("was_successful")
+  failureReason String?  @map("failure_reason")
+  ipAddress     String   @map("ip_address")
+  userAgent     String   @map("user_agent")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@map("login_attempts")
+}
+
+// ============================================================
+// ORG & PEOPLE (green)
+// ============================================================
+
+model Department {
+  id             BigInt    @id @default(autoincrement())
+  name           String    @unique
+  code           String?   @unique
+  description    String?
+  headEmployeeId BigInt?   @map("head_employee_id")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  headEmployee Employee? @relation("DepartmentHead", fields: [headEmployeeId], references: [id], onDelete: SetNull)
+
+  employees           Employee[]          @relation("EmployeeDepartment")
+  employmentHistories EmploymentHistory[] @relation("HistoryDepartment")
+  holidays            Holiday[]
+  announcements       Announcement[]
+
+  @@map("departments")
+}
+
+model Employee {
+  id                 BigInt           @id @default(autoincrement())
+  userId             BigInt           @unique @map("user_id")
+  firstName          String           @map("first_name")
+  lastName           String           @map("last_name")
+  phone              String?
+  dateOfBirth        DateTime?        @map("date_of_birth") @db.Date
+  gender             Gender?
+  addressLine1       String?          @map("address_line1")
+  addressLine2       String?          @map("address_line2")
+  city               String?
+  state              String?
+  country            String?
+  postalCode         String?          @map("postal_code")
+  profilePictureUrl  String?          @map("profile_picture_url")
+  departmentId       BigInt?          @map("department_id")
+  designation        String?
+  employmentType     EmploymentType   @map("employment_type")
+  dateOfJoining      DateTime         @map("date_of_joining") @db.Date
+  dateOfExit         DateTime?        @map("date_of_exit") @db.Date
+  reportingManagerId BigInt?          @map("reporting_manager_id")
+  workLocation       String?          @map("work_location")
+  employmentStatus   EmploymentStatus @map("employment_status")
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt          DateTime?        @map("deleted_at") @db.Timestamptz(6)
+
+  user              User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  department        Department?  @relation("EmployeeDepartment", fields: [departmentId], references: [id], onDelete: SetNull)
+  reportingManager  Employee?    @relation("ReportingManager", fields: [reportingManagerId], references: [id], onDelete: SetNull)
+  directReports     Employee[]   @relation("ReportingManager")
+  departmentsHeaded Department[] @relation("DepartmentHead")
+
+  employmentHistories       EmploymentHistory[]        @relation("EmployeeHistory")
+  managedHistories          EmploymentHistory[]        @relation("HistoryReportingManager")
+  emergencyContacts         EmergencyContact[]
+  bankAccounts              EmployeeBankAccount[]
+  documents                 Document[]                 @relation("EmployeeDocuments")
+  attendances               Attendance[]
+  attendanceRegularizations AttendanceRegularization[]
+  leaveRequests             LeaveRequest[]
+  leaveBalances             LeaveBalance[]
+  salaryStructures          SalaryStructure[]
+  payslips                  Payslip[]
+
+  @@index([departmentId])
+  @@index([reportingManagerId])
+  @@index([employmentStatus])
+  @@map("employees")
+}
+
+model EmploymentHistory {
+  id                 BigInt               @id @default(autoincrement())
+  employeeId         BigInt               @map("employee_id")
+  changeType         EmploymentChangeType @map("change_type")
+  departmentId       BigInt?              @map("department_id")
+  designation        String?
+  employmentType     EmploymentType?      @map("employment_type")
+  reportingManagerId BigInt?              @map("reporting_manager_id")
+  effectiveFrom      DateTime             @map("effective_from") @db.Date
+  effectiveTo        DateTime?            @map("effective_to") @db.Date
+  changedBy          BigInt               @map("changed_by")
+  note               String?
+  createdAt          DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  employee         Employee    @relation("EmployeeHistory", fields: [employeeId], references: [id], onDelete: Restrict)
+  department       Department? @relation("HistoryDepartment", fields: [departmentId], references: [id], onDelete: SetNull)
+  reportingManager Employee?   @relation("HistoryReportingManager", fields: [reportingManagerId], references: [id], onDelete: SetNull)
+  changedByUser    User        @relation("ChangedByUser", fields: [changedBy], references: [id], onDelete: Restrict)
+
+  @@index([employeeId])
+  @@map("employment_history")
+}
+
+model EmergencyContact {
+  id           BigInt   @id @default(autoincrement())
+  employeeId   BigInt   @map("employee_id")
+  name         String
+  relationship String
+  phone        String
+  email        String?
+  isPrimary    Boolean  @map("is_primary")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+  @@map("emergency_contacts")
+}
+
+model EmployeeBankAccount {
+  id                BigInt   @id @default(autoincrement())
+  employeeId        BigInt   @map("employee_id")
+  accountHolderName String   @map("account_holder_name")
+  bankName          String   @map("bank_name")
+  accountNumberEnc  String   @map("account_number_enc")
+  ifscSwift         String   @map("ifsc_swift")
+  branch            String?
+  currency          String
+  isPrimary         Boolean  @map("is_primary")
+  isVerified        Boolean  @map("is_verified")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  employee Employee  @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  payslips Payslip[]
+
+  @@index([employeeId])
+  @@map("employee_bank_accounts")
+}
+
+model Document {
+  id         BigInt    @id @default(autoincrement())
+  employeeId BigInt    @map("employee_id")
+  docType    DocType   @map("doc_type")
+  title      String
+  fileUrl    String    @map("file_url")
+  fileName   String    @map("file_name")
+  mimeType   String    @map("mime_type")
+  fileSize   Int       @map("file_size")
+  issueDate  DateTime? @map("issue_date") @db.Date
+  expiryDate DateTime? @map("expiry_date") @db.Date
+  uploadedBy BigInt    @map("uploaded_by")
+  isVerified Boolean   @map("is_verified")
+  verifiedBy BigInt?   @map("verified_by")
+  verifiedAt DateTime? @map("verified_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  employee       Employee @relation("EmployeeDocuments", fields: [employeeId], references: [id], onDelete: Restrict)
+  uploadedByUser User     @relation("UploadedByUser", fields: [uploadedBy], references: [id], onDelete: Restrict)
+  verifiedByUser User?    @relation("VerifiedByUser", fields: [verifiedBy], references: [id], onDelete: SetNull)
+
+  @@index([employeeId])
+  @@map("documents")
+}
+
+// ============================================================
+// TIME & ATTENDANCE (orange)
+// ============================================================
+
+model Holiday {
+  id           BigInt           @id @default(autoincrement())
+  name         String
+  holidayDate  DateTime         @map("holiday_date") @db.Date
+  type         HolidayType
+  appliesTo    HolidayAppliesTo @map("applies_to")
+  location     String?
+  departmentId BigInt?          @map("department_id")
+  year         Int
+  createdBy    BigInt           @map("created_by")
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  department    Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  createdByUser User        @relation("CreatedByUser", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([departmentId])
+  @@index([year])
+  @@map("holidays")
+}
+
+model Attendance {
+  id            BigInt           @id @default(autoincrement())
+  employeeId    BigInt           @map("employee_id")
+  workDate      DateTime         @map("work_date") @db.Date
+  checkInAt     DateTime?        @map("check_in_at") @db.Timestamptz(6)
+  checkOutAt    DateTime?        @map("check_out_at") @db.Timestamptz(6)
+  workHours     Decimal?         @map("work_hours") @db.Decimal(5, 2)
+  status        AttendanceStatus
+  source        AttendanceSource
+  isRegularized Boolean          @default(false) @map("is_regularized")
+  approvedBy    BigInt?          @map("approved_by")
+  remarks       String?
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  employee        Employee                   @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  approvedByUser  User?                      @relation("ApprovedByUser", fields: [approvedBy], references: [id], onDelete: SetNull)
+  regularizations AttendanceRegularization[]
+
+  @@unique([employeeId, workDate])
+  @@index([workDate])
+  @@index([status])
+  @@map("attendance")
+}
+
+model AttendanceRegularization {
+  id                BigInt                        @id @default(autoincrement())
+  employeeId        BigInt                        @map("employee_id")
+  attendanceId      BigInt?                       @map("attendance_id")
+  workDate          DateTime                      @map("work_date") @db.Date
+  requestedCheckIn  DateTime                      @map("requested_check_in") @db.Timestamptz(6)
+  requestedCheckOut DateTime                      @map("requested_check_out") @db.Timestamptz(6)
+  requestedStatus   RegularizationRequestedStatus @map("requested_status")
+  reason            String
+  status            RegularizationStatus
+  reviewedBy        BigInt?                       @map("reviewed_by")
+  reviewedAt        DateTime?                     @map("reviewed_at") @db.Timestamptz(6)
+  reviewComment     String?                       @map("review_comment")
+  createdAt         DateTime                      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime                      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  employee       Employee    @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  attendance     Attendance? @relation(fields: [attendanceId], references: [id], onDelete: SetNull)
+  reviewedByUser User?       @relation("ReviewedByUser", fields: [reviewedBy], references: [id], onDelete: SetNull)
+
+  @@index([employeeId])
+  @@map("attendance_regularizations")
+}
+
+// ============================================================
+// LEAVE & TIME-OFF (orange)
+// ============================================================
+
+model LeaveType {
+  id                 BigInt   @id @default(autoincrement())
+  name               String
+  code               String   @unique
+  isPaid             Boolean  @map("is_paid")
+  allowHalfDay       Boolean  @default(true) @map("allow_half_day")
+  requiresApproval   Boolean  @default(true) @map("requires_approval")
+  defaultAnnualQuota Decimal? @map("default_annual_quota") @db.Decimal(5, 1)
+  maxConsecutiveDays Int?     @map("max_consecutive_days")
+  color              String?
+  isActive           Boolean  @map("is_active")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  leaveRequests LeaveRequest[]
+  leaveBalances LeaveBalance[]
+
+  @@map("leave_types")
+}
+
+model LeaveRequest {
+  id            BigInt             @id @default(autoincrement())
+  employeeId    BigInt             @map("employee_id")
+  leaveTypeId   BigInt             @map("leave_type_id")
+  startDate     DateTime           @map("start_date") @db.Date
+  endDate       DateTime           @map("end_date") @db.Date
+  totalDays     Decimal            @map("total_days") @db.Decimal(5, 1)
+  reason        String?
+  status        LeaveRequestStatus
+  appliedAt     DateTime           @map("applied_at") @db.Timestamptz(6)
+  reviewedBy    BigInt?            @map("reviewed_by")
+  reviewedAt    DateTime?          @map("reviewed_at") @db.Timestamptz(6)
+  reviewComment String?            @map("review_comment")
+  cancelledAt   DateTime?          @map("cancelled_at") @db.Timestamptz(6)
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  employee         Employee          @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  leaveType        LeaveType         @relation(fields: [leaveTypeId], references: [id], onDelete: Restrict)
+  reviewedByUser   User?             @relation("ReviewedByUser", fields: [reviewedBy], references: [id], onDelete: SetNull)
+  leaveRequestDays LeaveRequestDay[]
+
+  @@index([employeeId, status])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@map("leave_requests")
+}
+
+model LeaveRequestDay {
+  id             BigInt       @id @default(autoincrement())
+  leaveRequestId BigInt       @map("leave_request_id")
+  leaveDate      DateTime     @map("leave_date") @db.Date
+  portion        LeavePortion
+  dayCount       Decimal      @map("day_count") @db.Decimal(5, 1)
+
+  leaveRequest LeaveRequest @relation(fields: [leaveRequestId], references: [id], onDelete: Cascade)
+
+  @@unique([leaveRequestId, leaveDate])
+  @@map("leave_request_days")
+}
+
+model LeaveBalance {
+  id                 BigInt   @id @default(autoincrement())
+  employeeId         BigInt   @map("employee_id")
+  leaveTypeId        BigInt   @map("leave_type_id")
+  year               Int
+  entitledDays       Decimal  @map("entitled_days") @db.Decimal(5, 1)
+  carriedForwardDays Decimal  @default(0) @map("carried_forward_days") @db.Decimal(5, 1)
+  usedDays           Decimal  @default(0) @map("used_days") @db.Decimal(5, 1)
+  pendingDays        Decimal  @default(0) @map("pending_days") @db.Decimal(5, 1)
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  employee  Employee  @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  leaveType LeaveType @relation(fields: [leaveTypeId], references: [id], onDelete: Restrict)
+
+  @@unique([employeeId, leaveTypeId, year])
+  @@map("leave_balances")
+}
+
+// ============================================================
+// COMPENSATION & PAYROLL (purple)
+// ============================================================
+
+model SalaryStructure {
+  id            BigInt    @id @default(autoincrement())
+  employeeId    BigInt    @map("employee_id")
+  currency      String
+  effectiveFrom DateTime  @map("effective_from") @db.Date
+  effectiveTo   DateTime? @map("effective_to") @db.Date
+  isCurrent     Boolean   @map("is_current")
+  grossMonthly  Decimal   @map("gross_monthly") @db.Decimal(14, 2)
+  notes         String?
+  createdBy     BigInt    @map("created_by")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  employee      Employee          @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  createdByUser User              @relation("CreatedByUser", fields: [createdBy], references: [id], onDelete: Restrict)
+  components    SalaryComponent[]
+  payslips      Payslip[]
+
+  @@index([employeeId])
+  @@map("salary_structures")
+}
+
+model SalaryComponent {
+  id                BigInt          @id @default(autoincrement())
+  salaryStructureId BigInt          @map("salary_structure_id")
+  componentType     ComponentType   @map("component_type")
+  name              String
+  calculationType   CalculationType @map("calculation_type")
+  basedOn           String?         @map("based_on")
+  value             Decimal         @db.Decimal(14, 2)
+  isTaxable         Boolean         @map("is_taxable")
+  displayOrder      Int             @map("display_order")
+
+  salaryStructure SalaryStructure @relation(fields: [salaryStructureId], references: [id], onDelete: Cascade)
+
+  @@index([salaryStructureId])
+  @@map("salary_components")
+}
+
+model PayrollRun {
+  id              BigInt           @id @default(autoincrement())
+  periodMonth     Int              @map("period_month")
+  periodYear      Int              @map("period_year")
+  runDate         DateTime         @map("run_date") @db.Date
+  status          PayrollRunStatus
+  employeeCount   Int              @map("employee_count")
+  totalGross      Decimal          @map("total_gross") @db.Decimal(14, 2)
+  totalDeductions Decimal          @map("total_deductions") @db.Decimal(14, 2)
+  totalNet        Decimal          @map("total_net") @db.Decimal(14, 2)
+  processedBy     BigInt           @map("processed_by")
+  completedAt     DateTime?        @map("completed_at") @db.Timestamptz(6)
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  processedByUser User      @relation("ProcessedByUser", fields: [processedBy], references: [id], onDelete: Restrict)
+  payslips        Payslip[]
+
+  @@unique([periodMonth, periodYear])
+  @@map("payroll_runs")
+}
+
+model Payslip {
+  id                BigInt        @id @default(autoincrement())
+  payrollRunId      BigInt?       @map("payroll_run_id")
+  employeeId        BigInt        @map("employee_id")
+  salaryStructureId BigInt        @map("salary_structure_id")
+  periodMonth       Int           @map("period_month")
+  periodYear        Int           @map("period_year")
+  workingDays       Decimal       @map("working_days") @db.Decimal(5, 1)
+  paidDays          Decimal       @map("paid_days") @db.Decimal(5, 1)
+  lopDays           Decimal       @default(0) @map("lop_days") @db.Decimal(5, 1)
+  grossPay          Decimal       @map("gross_pay") @db.Decimal(14, 2)
+  totalDeductions   Decimal       @map("total_deductions") @db.Decimal(14, 2)
+  netPay            Decimal       @map("net_pay") @db.Decimal(14, 2)
+  currency          String
+  status            PayslipStatus
+  paymentStatus     PaymentStatus @map("payment_status")
+  bankAccountId     BigInt?       @map("bank_account_id")
+  paidAt            DateTime?     @map("paid_at") @db.Timestamptz(6)
+  paymentReference  String?       @map("payment_reference")
+  payslipFileUrl    String?       @map("payslip_file_url")
+  remarks           String?
+  generatedAt       DateTime      @map("generated_at") @db.Timestamptz(6)
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  payrollRun      PayrollRun?          @relation(fields: [payrollRunId], references: [id], onDelete: SetNull)
+  employee        Employee             @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  salaryStructure SalaryStructure      @relation(fields: [salaryStructureId], references: [id], onDelete: Restrict)
+  bankAccount     EmployeeBankAccount? @relation(fields: [bankAccountId], references: [id], onDelete: SetNull)
+  items           PayslipItem[]
+
+  @@unique([employeeId, periodMonth, periodYear])
+  @@index([payrollRunId])
+  @@map("payslips")
+}
+
+model PayslipItem {
+  id            BigInt        @id @default(autoincrement())
+  payslipId     BigInt        @map("payslip_id")
+  componentType ComponentType @map("component_type")
+  name          String
+  amount        Decimal       @db.Decimal(14, 2)
+  displayOrder  Int           @map("display_order")
+
+  payslip Payslip @relation(fields: [payslipId], references: [id], onDelete: Cascade)
+
+  @@index([payslipId])
+  @@map("payslip_items")
+}
+
+// ============================================================
+// ENGAGEMENT & SYSTEM (gray)
+// ============================================================
+
+model Announcement {
+  id           BigInt               @id @default(autoincrement())
+  title        String
+  body         String
+  audience     AnnouncementAudience
+  departmentId BigInt?              @map("department_id")
+  role         UserRole?
+  publishedBy  BigInt               @map("published_by")
+  isPinned     Boolean              @map("is_pinned")
+  publishedAt  DateTime             @map("published_at") @db.Timestamptz(6)
+  expiresAt    DateTime?            @map("expires_at") @db.Timestamptz(6)
+  createdAt    DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  department      Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  publishedByUser User        @relation("PublishedByUser", fields: [publishedBy], references: [id], onDelete: Restrict)
+
+  @@index([departmentId])
+  @@map("announcements")
+}
+
+model Notification {
+  id                BigInt              @id @default(autoincrement())
+  userId            BigInt              @map("user_id")
+  type              String
+  title             String
+  message           String
+  channel           NotificationChannel
+  relatedEntityType String?             @map("related_entity_type")
+  relatedEntityId   BigInt?             @map("related_entity_id")
+  isRead            Boolean             @default(false) @map("is_read")
+  readAt            DateTime?           @map("read_at") @db.Timestamptz(6)
+  sentAt            DateTime?           @map("sent_at") @db.Timestamptz(6)
+  createdAt         DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model ActivityLog {
+  id          BigInt   @id @default(autoincrement())
+  actorUserId BigInt   @map("actor_user_id")
+  action      String
+  entityType  String   @map("entity_type")
+  entityId    BigInt   @map("entity_id")
+  metadata    Json?
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  actorUser User @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([actorUserId, createdAt])
+  @@index([entityType, entityId])
+  @@map("activity_logs")
+}
