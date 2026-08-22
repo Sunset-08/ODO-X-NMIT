@@ -1,9 +1,10 @@
 import * as React from "react";
 
+// DayFlow card: border-based depth, no heavy shadows, 12px radius
 export function Card({ className = "", ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={`bg-surface border border-border shadow-sm ${className}`}
+      className={`bg-surface border border-border rounded-[12px] ${className}`}
       {...props}
     />
   );
@@ -12,7 +13,7 @@ export function Card({ className = "", ...props }: React.HTMLAttributes<HTMLDivE
 export function CardHeader({ className = "", ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={`flex flex-col space-y-1.5 p-6 border-b border-border ${className}`}
+      className={`flex flex-col space-y-1 p-5 border-b border-border ${className}`}
       {...props}
     />
   );
@@ -21,7 +22,7 @@ export function CardHeader({ className = "", ...props }: React.HTMLAttributes<HT
 export function CardTitle({ className = "", ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
-      className={`text-lg font-medium leading-none tracking-tight text-primary ${className}`}
+      className={`text-base font-semibold leading-tight text-text ${className}`}
       {...props}
     />
   );
@@ -38,14 +39,14 @@ export function CardDescription({ className = "", ...props }: React.HTMLAttribut
 
 export function CardContent({ className = "", ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={`p-6 pt-0 ${className}`} {...props} />
+    <div className={`p-5 pt-0 ${className}`} {...props} />
   );
 }
 
 export function CardFooter({ className = "", ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={`flex items-center p-6 pt-0 ${className}`}
+      className={`flex items-center p-5 pt-0 ${className}`}
       {...props}
     />
   );

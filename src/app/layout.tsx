@@ -1,15 +1,17 @@
 import type { Metadata } from "next";
-import { Public_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const publicSans = Public_Sans({
+const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
-  title: "DayFlow HR Management",
-  description: "Enterprise HR Management System",
+  title: "DayFlow — Every workday, perfectly aligned.",
+  description: "DayFlow is a professional HR Management System for managing employees, attendance, leave, and payroll.",
 };
 
 export default function RootLayout({
@@ -20,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${publicSans.variable} font-sans bg-background text-primary antialiased min-h-screen flex flex-col`}
+        className={`${inter.variable} font-sans bg-background text-text antialiased min-h-screen flex flex-col`}
       >
         {children}
       </body>

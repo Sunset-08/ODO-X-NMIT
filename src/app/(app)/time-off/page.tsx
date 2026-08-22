@@ -15,7 +15,7 @@ export default function TimeOffPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="bg-surface">
           <CardContent className="p-6">
-            <h3 className="text-sm font-medium text-secondary mb-1">Paid Time Off</h3>
+            <h3 className="text-sm font-medium text-secondary mb-1 py-5">Paid Time Off</h3>
             <div className="flex items-end gap-2">
               <p className="text-3xl font-semibold text-primary">12</p>
               <p className="text-sm text-secondary mb-1">Days Available</p>
@@ -25,7 +25,7 @@ export default function TimeOffPage() {
         
         <Card className="bg-surface">
           <CardContent className="p-6">
-            <h3 className="text-sm font-medium text-secondary mb-1">Sick Leave</h3>
+            <h3 className="text-sm font-medium text-secondary mb-1 py-5">Sick Leave</h3>
             <div className="flex items-end gap-2">
               <p className="text-3xl font-semibold text-primary">5</p>
               <p className="text-sm text-secondary mb-1">Days Available</p>

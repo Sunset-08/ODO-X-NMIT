@@ -87,7 +87,15 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <Label htmlFor="loginId">Login Id/Email</Label>
-              <Input id="loginId" type="text" placeholder="e.g. DF20220001 or name@company.com" required />
+              <Input 
+                id="loginId" 
+                type="text" 
+                placeholder="e.g. DF20220001 or name@company.com" 
+                value={formData.loginId}
+                onChange={handleChange}
+                error={errors.loginId}
+                required 
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password" required>Password</Label>

@@ -1,29 +1,196 @@
 @import "tailwindcss";
 
+/* ============================================================
+   DAYFLOW DESIGN SYSTEM — Global Tokens
+   These tokens drive the entire UI. Update here, not inline.
+
+   TOKEN NAMING CONVENTION:
+   --color-primary     → Brand maroon (#6B001F) — CTAs, active nav, links
+   --color-text        → Body text (#21191C)    — headings, labels, paragraphs
+   --color-secondary   → Muted text (#71676C)   — placeholders, captions
+   ============================================================ */
+
 @theme {
-  --color-background: #FDFDFD;
-  --color-surface: #FFFFFF;
-  --color-primary: #1C1917; /* Deep charcoal */
-  --color-secondary: #57534E; /* Muted gray */
-  --color-border: #E7E5E4; /* Soft neutral gray */
-  --color-accent: #8C2929; /* Muted burgundy / dark rust */
-  --color-accent-hover: #712121;
-  --color-success: #417B5A; /* Muted green */
-  --color-warning: #D97706; /* Muted amber */
-  --color-error: #B91C1C; /* Muted red */
-  
-  --font-sans: var(--font-sans), system-ui, sans-serif;
+  /* --- Brand / Maroon Palette --- */
+  --color-primary:       #6B001F; /* Deep maroon — brand identity, CTAs, active states */
+  --color-primary-dark:  #450014; /* Darker maroon — hover on primary */
+  --color-primary-light: #9B2948; /* Lighter maroon — secondary brand uses */
+  --color-accent:        #C45A76; /* Soft rose accent — links, highlights */
+  --color-accent-light:  #F7E9EE; /* Very light accent — selected bg, tints */
+
+  /* --- Neutral / Surface --- */
+  --color-background: #FAF8F9; /* Warm off-white — page background */
+  --color-surface:    #FFFFFF; /* Pure white — cards, panels, inputs */
+
+  /* --- Text --- */
+  --color-text:      #21191C; /* Near-black — primary body text, headings */
+  --color-secondary: #71676C; /* Muted warm gray — secondary text, labels */
+
+  /* --- Borders --- */
+  --color-border: #E8DFE2; /* Subtle warm border */
+
+  /* --- Status --- */
+  --color-success: #249A6B; /* Green */
+  --color-warning: #E9A23B; /* Amber */
+  --color-error:   #D64550; /* Red */
+
+  /* --- Typography --- */
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+
+  /* --- Border Radius --- */
+  --radius-card:   12px;
+  --radius-button: 8px;
+  --radius-badge:  6px;
+  --radius-sm:     4px;
+
+  /* --- Shadows (restrained) --- */
+  --shadow-card:     0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+  --shadow-dropdown: 0 4px 16px 0 rgb(33 25 28 / 0.10);
+
+  /* --- Focus Ring --- */
+  --color-ring: #C45A76; /* Accent — consistent focus outline */
+}
+
+/* ============================================================
+   BASE STYLES
+   ============================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
   background-color: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ============================================================
+   FOCUS STATES — Consistent, accessible, on-brand
+   ============================================================ */
+
+:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   SCROLLBAR — Subtle, matches brand
+   ============================================================ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-secondary);
+}
+
+/* ============================================================
+   SELECTION
+   ============================================================ */
+
+::selection {
+  background-color: var(--color-accent-light);
   color: var(--color-primary);
 }
 
+/* ============================================================
+   TYPOGRAPHY HIERARCHY
+   ============================================================ */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--color-text);
+}
+
+h1 { font-size: 1.75rem;  } /* 28px — Page headings     */
+h2 { font-size: 1.25rem;  } /* 20px — Section headings  */
+h3 { font-size: 1.125rem; } /* 18px — Card headings     */
+h4 { font-size: 1rem;     } /* 16px — Minor headings    */
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+
 @layer utilities {
+  /* Layout */
   .flex-center {
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  /* DayFlow Card — the default card style */
+  .df-card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+  }
+
+  /* DayFlow surface divider */
+  .df-divider {
+    border: none;
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* Status badge base */
+  .df-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--radius-badge);
+    line-height: 1.5;
+  }
+
+  .df-badge-success {
+    background-color: color-mix(in srgb, var(--color-success) 12%, transparent);
+    color: var(--color-success);
+  }
+
+  .df-badge-warning {
+    background-color: color-mix(in srgb, var(--color-warning) 12%, transparent);
+    color: #a06b1a;
+  }
+
+  .df-badge-error {
+    background-color: color-mix(in srgb, var(--color-error) 10%, transparent);
+    color: var(--color-error);
+  }
+
+  .df-badge-neutral {
+    background-color: var(--color-accent-light);
+    color: var(--color-primary-light);
+  }
+
+  /* Page section spacing */
+  .df-page {
+    padding: 2rem 1.5rem;
+    max-width: 1280px;
+    margin-inline: auto;
+    width: 100%;
   }
 }

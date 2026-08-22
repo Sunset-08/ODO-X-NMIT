@@ -6,9 +6,10 @@ export default function LandingPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <header className="w-full border-b border-border bg-surface h-16 flex items-center px-4 md:px-8">
         <div className="container mx-auto flex items-center justify-between">
-          <div className="font-semibold text-xl tracking-tight text-primary">
-            ODO India
-          </div>
+          <Link href="/" className="font-semibold text-xl tracking-tight text-primary flex items-center gap-2">
+            <img src="/DF_Logo.png" alt="DayFlow Logo" className="h-8 w-auto object-contain" />
+            DayFlow
+          </Link>
           <div className="flex gap-4">
             <Link href="/login">
               <Button variant="ghost">Sign In</Button>
@@ -37,7 +38,7 @@ export default function LandingPage() {
       </main>
       
       <footer className="py-6 text-center text-sm text-secondary border-t border-border">
-        &copy; {new Date().getFullYear()} ODO India. All rights reserved.
+        &copy; {new Date().getFullYear()} DayFlow. All rights reserved.
       </footer>
     </div>
   );
