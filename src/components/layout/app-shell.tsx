@@ -40,9 +40,15 @@ export function AppShell({ children, isAdmin = false }: { children: React.ReactN
           
           <div className="flex items-center gap-8">
             {/* Company Logo */}
+<<<<<<< Updated upstream
             <Link href={isAdmin ? "/admin/dashboard" : "/dashboard"} className="font-semibold text-lg tracking-tight text-primary flex items-center gap-2">
               ODO India
               {isAdmin && <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-secondary/10 text-secondary border border-border">ADMIN</span>}
+=======
+            <Link href="/" className="font-semibold text-lg tracking-tight text-primary flex items-center gap-2">
+              <img src="/DF_Logo.png" alt="DayFlow Logo" className="h-8 w-auto object-contain" />
+              DayFlow
+>>>>>>> Stashed changes
             </Link>
             
             {/* Primary Navigation */}

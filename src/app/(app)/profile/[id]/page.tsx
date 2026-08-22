@@ -36,11 +36,11 @@ export default function ProfilePage() {
               <div className="flex flex-col gap-3 mt-2">
                 <div className="grid grid-cols-[80px_1fr] items-center gap-2 text-sm">
                   <span className="text-secondary font-medium">Login ID</span>
-                  <span className="text-primary border-b border-border pb-1">OIJODO20220001</span>
+                  <span className="text-primary border-b border-border pb-1">DF20220001</span>
                 </div>
                 <div className="grid grid-cols-[80px_1fr] items-center gap-2 text-sm">
                   <span className="text-secondary font-medium">Email</span>
-                  <span className="text-primary border-b border-border pb-1">alice@odo.com</span>
+                  <span className="text-primary border-b border-border pb-1">alice@dayflow.com</span>
                 </div>
                 <div className="grid grid-cols-[80px_1fr] items-center gap-2 text-sm">
                   <span className="text-secondary font-medium">Mobile</span>
@@ -54,7 +54,7 @@ export default function ProfilePage() {
               <div className="flex flex-col gap-3 mt-2">
                 <div className="grid grid-cols-[80px_1fr] items-center gap-2 text-sm">
                   <span className="text-secondary font-medium">Company</span>
-                  <span className="text-primary border-b border-border pb-1">ODO India</span>
+                  <span className="text-primary border-b border-border pb-1">DayFlow India</span>
                 </div>
                 <div className="grid grid-cols-[80px_1fr] items-center gap-2 text-sm">
                   <span className="text-secondary font-medium">Department</span>

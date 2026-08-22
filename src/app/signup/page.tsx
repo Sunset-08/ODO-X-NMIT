@@ -52,7 +52,7 @@ export default function SignupPage() {
     
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
-      result.error.errors.forEach((err) => {
+      result.error.issues.forEach((err) => {
         if (err.path[0]) {
           fieldErrors[err.path[0].toString()] = err.message;
         }
@@ -97,6 +97,9 @@ export default function SignupPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4 py-12">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2 pb-4">
+          <div className="flex justify-center mb-2">
+            <img src="/DF_Logo.png" alt="DayFlow Logo" className="h-12 w-auto object-contain" />
+          </div>
           <CardTitle className="text-2xl font-bold">App/Web Sign Up</CardTitle>
           <p className="text-sm text-secondary">Register a new company account</p>
         </CardHeader>

@@ -39,7 +39,7 @@ export default function LoginPage() {
     
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
-      result.error.errors.forEach((err) => {
+      result.error.issues.forEach((err) => {
         if (err.path[0]) {
           fieldErrors[err.path[0].toString()] = err.message;
         }
@@ -70,8 +70,11 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2 pb-4">
-          <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
-          <p className="text-sm text-secondary">Access your ODO-X HR account</p>
+          <div className="flex justify-center mb-2">
+            <img src="/DF_Logo.png" alt="DayFlow Logo" className="h-12 w-auto object-contain" />
+          </div>
+          <CardTitle className="text-2xl font-bold">App/Web Login</CardTitle>
+          <p className="text-sm text-secondary">Sign in to your DayFlow HR account</p>
         </CardHeader>
         <form onSubmit={handleSubmit} noValidate>
           <CardContent className="space-y-4">
@@ -83,15 +86,8 @@ export default function LoginPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="loginId" required>Login Id / Email</Label>
-              <Input 
-                id="loginId" 
-                type="text" 
-                placeholder="e.g. OIJODO20220001 or name@company.com" 
-                value={formData.loginId}
-                onChange={handleChange}
-                error={errors.loginId}
-              />
+              <Label htmlFor="loginId">Login Id/Email</Label>
+              <Input id="loginId" type="text" placeholder="e.g. DF20220001 or name@company.com" required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password" required>Password</Label>

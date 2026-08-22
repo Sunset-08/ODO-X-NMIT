@@ -8,7 +8,7 @@ const publicSans = Public_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "ODO-X HR Management",
+  title: "DayFlow HR Management",
   description: "Enterprise HR Management System",
 };
 
