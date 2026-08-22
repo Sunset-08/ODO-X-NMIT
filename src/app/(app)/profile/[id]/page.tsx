@@ -48,11 +48,11 @@ function LabeledValue({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default async function EmployeeProfilePage({ params }: { params: { id: string } }) {
+export default async function EmployeeProfilePage({ params }: { params: Promise<{ id: string }> }) {
   // TODO: replace with session user once auth lands
   const currentUserId = "1";
   
-  const id = params.id;
+  const { id } = await params;
   const isSelf = id === currentUserId;
   const employee = await getEmployeeById(id);
 
