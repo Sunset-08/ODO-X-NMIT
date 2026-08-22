@@ -24,7 +24,6 @@ function formatDate(date: Date) {
   });
 }
 
-<<<<<<< HEAD
 export default async function EmployeeHomePage() {
   const currentUser = await getMyProfile();
   const attendance = await getTodayAttendance();
@@ -32,31 +31,6 @@ export default async function EmployeeHomePage() {
     include: { department: true },
     orderBy: { firstName: "asc" }
   });
-=======
-// Helper to get initial state
-function getInitialEmployees() {
-  return [...MOCK_EMPLOYEES];
-}
-
-export default function EmployeeHomePage() {
-  const [employees, setEmployees] = React.useState(getInitialEmployees);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const currentUser = employees.find((e) => e.id === CURRENT_USER_ID);
-
-  // Simulate a brief loading phase (remove when real API is wired)
-  React.useEffect(() => {
-    const id = setTimeout(() => setIsLoading(false), 800);
-    return () => clearTimeout(id);
-  }, []);
->>>>>>> origin/main
-
-  function handleStatusChange(newStatus: "present" | "absent" | "leave") {
-    setEmployees((prev) =>
-      prev.map((emp) =>
-        emp.id === CURRENT_USER_ID ? { ...emp, status: newStatus } : emp
-      )
-    );
-  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -72,7 +46,6 @@ export default function EmployeeHomePage() {
       </div>
 
       {/* Attendance widget */}
-<<<<<<< HEAD
       <Card>
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -106,9 +79,6 @@ export default function EmployeeHomePage() {
           </div>
         </CardContent>
       </Card>
-=======
-      <AttendanceWidget onStatusChange={handleStatusChange} />
->>>>>>> origin/main
 
       {/* Employee directory */}
       <section aria-labelledby="directory-heading">
@@ -118,16 +88,11 @@ export default function EmployeeHomePage() {
               People
             </h2>
             <p className="text-xs text-secondary mt-0.5">
-<<<<<<< HEAD
               {allEmployees.length} employees · click a card to view their profile
-=======
-              {employees.length} employees · click a card to view their profile
->>>>>>> origin/main
             </p>
           </div>
         </div>
 
-<<<<<<< HEAD
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {allEmployees.map((employee) => (
             <Link href={`/profile/${employee.id}`} key={employee.id.toString()} className="block">
@@ -143,13 +108,6 @@ export default function EmployeeHomePage() {
             </Link>
           ))}
         </div>
-=======
-        <EmployeeGrid
-          employees={employees}
-          currentUserId={CURRENT_USER_ID}
-          isLoading={isLoading}
-        />
->>>>>>> origin/main
       </section>
     </div>
   );
