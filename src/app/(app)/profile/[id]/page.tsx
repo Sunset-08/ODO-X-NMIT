@@ -1,18 +1,21 @@
-"use client";
-
 import * as React from "react";
 import Link from "next/link";
 import { ArrowLeft, EyeOff, Building2, MapPin, Mail, Phone } from "lucide-react";
-import { useParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
-import { EmployeeStatusBadge } from "@/components/employees/EmployeeStatusBadge";
-import { MOCK_EMPLOYEES, CURRENT_USER_ID } from "@/lib/mock-data";
+import { getEmployeeById } from "@/lib/actions/employees";
 
-/* ─────────────────────────────────────────────────────────────
-   Sub-components
-───────────────────────────────────────────────────────────── */
+function EmployeeStatusBadge({ status }: { status: string }) {
+  const isPresent = status === "present" || status === "active";
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+      isPresent ? "bg-success/10 text-success border-success/20" : "bg-warning/10 text-warning border-warning/20"
+    }`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${isPresent ? "bg-success" : "bg-warning"}`} />
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </span>
+  );
+}
 
 function InfoItem({
   icon: Icon,
@@ -45,54 +48,13 @@ function LabeledValue({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ProfileSkeleton() {
-  return (
-    <div className="flex flex-col gap-6 max-w-3xl">
-      <Card>
-        <CardContent className="p-6 flex gap-6 items-start">
-          <Skeleton className="w-20 h-20 rounded-full shrink-0" />
-          <div className="flex flex-col gap-2 flex-1">
-            <Skeleton className="h-5 w-44" />
-            <Skeleton className="h-3.5 w-32" />
-            <Skeleton className="h-3 w-24" />
-          </div>
-        </CardContent>
-      </Card>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i}>
-            <CardContent className="p-5 flex gap-3 items-start">
-              <Skeleton className="w-8 h-8 rounded-[8px] shrink-0" />
-              <div className="flex flex-col gap-1.5 flex-1">
-                <Skeleton className="h-3 w-14" />
-                <Skeleton className="h-3.5 w-28" />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Page
-───────────────────────────────────────────────────────────── */
-
-export default function EmployeeProfilePage() {
-  const params = useParams();
-  const id = params.id as string;
-  const [isLoading, setIsLoading] = React.useState(true);
-
-  const employee = MOCK_EMPLOYEES.find((e) => e.id === id);
-  const isSelf = id === CURRENT_USER_ID;
-
-  React.useEffect(() => {
-    const t = setTimeout(() => setIsLoading(false), 500);
-    return () => clearTimeout(t);
-  }, []);
-
-  if (isLoading) return <ProfileSkeleton />;
+export default async function EmployeeProfilePage({ params }: { params: { id: string } }) {
+  // TODO: replace with session user once auth lands
+  const currentUserId = "1";
+  
+  const id = params.id;
+  const isSelf = id === currentUserId;
+  const employee = await getEmployeeById(id);
 
   if (!employee) {
     return (
@@ -136,18 +98,18 @@ export default function EmployeeProfilePage() {
       <Card>
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row gap-5 items-start sm:items-center">
-            <Avatar initials={employee.initials} className="w-20 h-20 text-xl shrink-0" />
+            <Avatar initials={`${employee.firstName[0]}${employee.lastName[0]}`} className="w-20 h-20 text-xl shrink-0" />
             <div className="flex-1 min-w-0">
               <div className="flex items-start gap-3 flex-wrap">
                 <div className="min-w-0">
-                  <h1 className="text-xl font-semibold text-text">{employee.name}</h1>
-                  <p className="text-sm text-secondary ">{employee.role}</p>
+                  <h1 className="text-xl font-semibold text-text">{employee.firstName} {employee.lastName}</h1>
+                  <p className="text-sm text-secondary ">{employee.jobTitle}</p>
                   <p className="text-xs text-secondary mt-1">
-                    {employee.id} · {employee.department}
+                    {employee.employeeCode} · {employee.departmentName}
                   </p>
                 </div>
                 <div className="mt-1">
-                  <EmployeeStatusBadge status={employee.status} />
+                  <EmployeeStatusBadge status="active" />
                 </div>
               </div>
             </div>
@@ -168,7 +130,7 @@ export default function EmployeeProfilePage() {
           </Card>
           <Card>
             <CardContent className="min-h-[84px] flex items-center p-5">
-              <InfoItem icon={Phone} label="Phone" value="+91 9876543210" />
+              <InfoItem icon={Phone} label="Phone" value={employee.phone} />
             </CardContent>
           </Card>
           <Card>
@@ -178,7 +140,7 @@ export default function EmployeeProfilePage() {
           </Card>
           <Card>
             <CardContent className="min-h-[84px] flex items-center p-5">
-              <InfoItem icon={Building2} label="Department" value={employee.department} />
+              <InfoItem icon={Building2} label="Department" value={employee.departmentName} />
             </CardContent>
           </Card>
         </div>
@@ -191,19 +153,12 @@ export default function EmployeeProfilePage() {
         </h2>
         <Card>
           <CardContent className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-5">
-            <LabeledValue label="Employee ID" value={employee.id} />
-            <LabeledValue label="Job Title" value={employee.role} />
-            <LabeledValue label="Department" value={employee.department} />
+            <LabeledValue label="Employee ID" value={employee.employeeCode} />
+            <LabeledValue label="Job Title" value={employee.jobTitle} />
+            <LabeledValue label="Department" value={employee.departmentName} />
             <LabeledValue label="Location" value={employee.location} />
             <LabeledValue label="Employment Type" value="Full-time" />
-            <LabeledValue
-              label="Status"
-              value={
-                employee.status === "leave"
-                  ? "On Leave"
-                  : "Active"
-              }
-            />
+            <LabeledValue label="Status" value="Active" />
           </CardContent>
         </Card>
       </div>

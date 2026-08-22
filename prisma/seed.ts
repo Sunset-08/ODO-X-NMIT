@@ -3,14 +3,17 @@
  * Run: npx prisma db seed
  * Or:  ts-node --compiler-options {"module":"CommonJS"} prisma/seed.ts
  */
+import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
+import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-const adapter = new PrismaPg({
+const pool = new Pool({
   connectionString: process.env.DATABASE_URL!,
 });
+const adapter = new PrismaPg(pool);
 
 const prisma = new PrismaClient({ adapter });
 

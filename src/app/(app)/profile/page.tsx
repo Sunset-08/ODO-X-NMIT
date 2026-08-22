@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MOCK_EMPLOYEES, CURRENT_USER_ID } from "@/lib/mock-data";
+import { getMyProfile } from "@/lib/actions/employees";
 
 type EditableFields = { phone: string; address: string };
+type ProfileData = Awaited<ReturnType<typeof getMyProfile>>;
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
@@ -124,19 +125,22 @@ export default function MyProfilePage() {
   const [saveSuccess, setSaveSuccess] = React.useState(false);
   const [avatarPreview, setAvatarPreview] = React.useState<string | null>(null);
   const [pendingAvatarFile, setPendingAvatarFile] = React.useState<File | null>(null);
-
-  const [saved, setSaved] = React.useState<EditableFields>({
-    phone: "+91 9876543210",
-    address: "123 Tech Park, Bengaluru, Karnataka — 560001",
-  });
-  const [draft, setDraft] = React.useState<EditableFields>(saved);
+  const [saved, setSaved] = React.useState<EditableFields>({ phone: "", address: "" });
+  const [draft, setDraft] = React.useState<EditableFields>({ phone: "", address: "" });
   const [errors, setErrors] = React.useState<Partial<EditableFields>>({});
-
-  const employee = MOCK_EMPLOYEES.find((e) => e.id === CURRENT_USER_ID);
+  const [employee, setEmployee] = React.useState<ProfileData | null>(null);
 
   React.useEffect(() => {
-    const t = setTimeout(() => setIsLoading(false), 600);
-    return () => clearTimeout(t);
+    async function load() {
+      const data = await getMyProfile();
+      if (data) {
+        setEmployee(data);
+        setSaved({ phone: data.phone, address: data.address });
+        setDraft({ phone: data.phone, address: data.address });
+      }
+      setIsLoading(false);
+    }
+    load();
   }, []);
 
   function startEditing() { setDraft(saved); setErrors({}); setSaveSuccess(false); setIsEditing(true); }
@@ -193,20 +197,20 @@ export default function MyProfilePage() {
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
             {isEditing ? (
-              <AvatarEdit initials={employee.initials} preview={avatarPreview} onFileChange={(f) => { setPendingAvatarFile(f); setAvatarPreview(URL.createObjectURL(f)); }} />
+              <AvatarEdit initials={`${employee.firstName[0]}${employee.lastName[0]}`} preview={avatarPreview} onFileChange={(f) => { setPendingAvatarFile(f); setAvatarPreview(URL.createObjectURL(f)); }} />
             ) : (
               <div className="shrink-0">
                 {avatarPreview
                   ? <img src={avatarPreview} alt="Profile" className="w-20 h-20 rounded-full object-cover border-2 border-border" />
-                  : <Avatar initials={employee.initials} className="w-20 h-20 text-xl" />
+                  : <Avatar initials={`${employee.firstName[0]}${employee.lastName[0]}`} className="w-20 h-20 text-xl" />
                 }
               </div>
             )}
 
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl font-semibold text-text">{employee.name}</h1>
-              <p className="text-sm text-secondary mt-0.5">{employee.role}</p>
-              <p className="text-xs text-secondary mt-1">{employee.id} · {employee.department} · {employee.location}</p>
+              <h1 className="text-xl font-semibold text-text">{employee.firstName} {employee.lastName}</h1>
+              <p className="text-sm text-secondary mt-0.5">{employee.jobTitle}</p>
+              <p className="text-xs text-secondary mt-1">{employee.employeeCode} · {employee.departmentName} · {employee.location}</p>
             </div>
 
             <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
@@ -279,9 +283,9 @@ export default function MyProfilePage() {
         <CardContent className="p-6">
           <SectionHeading>Job Information</SectionHeading>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <InfoRow label="Department" value={employee.department} />
-            <InfoRow label="Job Title" value={employee.role} />
-            <InfoRow label="Employee ID" value={employee.id} />
+            <InfoRow label="Department" value={employee.departmentName} />
+            <InfoRow label="Job Title" value={employee.jobTitle} />
+            <InfoRow label="Employee ID" value={employee.employeeCode} />
             <InfoRow label="Location" value={employee.location} />
           </div>
         </CardContent>
@@ -294,34 +298,34 @@ export default function MyProfilePage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-5 mb-5">
             <div className="flex flex-col gap-0.5">
               <span className="text-xs font-medium text-secondary uppercase tracking-wide">Monthly</span>
-              <span className="text-lg font-semibold text-text">₹50,000</span>
+              <span className="text-lg font-semibold text-text">₹{employee.salary ? employee.salary.monthly.toLocaleString() : "0"}</span>
             </div>
             <div className="flex flex-col gap-0.5">
               <span className="text-xs font-medium text-secondary uppercase tracking-wide">Annual</span>
-              <span className="text-lg font-semibold text-text">₹6,00,000</span>
+              <span className="text-lg font-semibold text-text">₹{employee.salary ? employee.salary.annual.toLocaleString() : "0"}</span>
             </div>
           </div>
           <div className="border-t border-border pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <p className="text-xs font-semibold text-secondary mb-3">Earnings</p>
               <div className="flex flex-col gap-2">
-                {[["Basic Salary","₹25,000"],["House Rent Allowance","₹12,500"],["Special Allowance","₹12,500"]].map(([l,v]) => (
-                  <div key={l} className="flex justify-between text-sm">
-                    <span className="text-secondary">{l}</span>
-                    <span className="font-medium text-text">{v}</span>
+                {employee.salary?.components.filter(c => c.type === "earning").map((c) => (
+                  <div key={c.name} className="flex justify-between text-sm">
+                    <span className="text-secondary">{c.name}</span>
+                    <span className="font-medium text-text">₹{c.amount.toLocaleString()}</span>
                   </div>
-                ))}
+                )) || <span className="text-sm text-secondary">No earnings defined</span>}
               </div>
             </div>
             <div>
               <p className="text-xs font-semibold text-secondary mb-3">Deductions</p>
               <div className="flex flex-col gap-2">
-                {[["Provident Fund","₹1,800"],["Professional Tax","₹200"]].map(([l,v]) => (
-                  <div key={l} className="flex justify-between text-sm">
-                    <span className="text-secondary">{l}</span>
-                    <span className="font-medium text-text">{v}</span>
+                {employee.salary?.components.filter(c => c.type === "deduction").map((c) => (
+                  <div key={c.name} className="flex justify-between text-sm">
+                    <span className="text-secondary">{c.name}</span>
+                    <span className="font-medium text-text">₹{c.amount.toLocaleString()}</span>
                   </div>
-                ))}
+                )) || <span className="text-sm text-secondary">No deductions defined</span>}
               </div>
             </div>
           </div>
