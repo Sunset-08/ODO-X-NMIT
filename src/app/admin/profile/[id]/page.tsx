@@ -1,5 +1,5 @@
 import ProfilePage from "@/app/(app)/profile/[id]/page";
 
-export default function AdminProfilePage() {
-  return <ProfilePage />;
+export default function AdminEmployeeProfilePage({ params }: { params: { id: string } }) {
+  return <ProfilePage params={params} />;
 }
