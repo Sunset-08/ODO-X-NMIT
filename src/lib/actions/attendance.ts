@@ -140,3 +140,25 @@ export async function getTodayAttendance() {
     workHours: attendance.workHours ? Number(attendance.workHours) : 0,
   } : null;
 }
+
+export async function getAdminTodayAttendance() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const records = await prisma.attendance.findMany({
+    where: { workDate: { gte: today, lt: tomorrow } },
+    include: { employee: true },
+    orderBy: { checkInAt: "desc" },
+  });
+
+  return records.map((r) => ({
+    id: r.id.toString(),
+    employeeName: `${r.employee.firstName} ${r.employee.lastName}`,
+    checkIn: r.checkInAt,
+    checkOut: r.checkOutAt,
+    workHours: r.workHours ? Number(r.workHours) : null,
+    status: r.status,
+  }));
+}

@@ -2,8 +2,19 @@ import * as React from "react";
 import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  getAdminDashboardStats,
+  getPendingLeaveRequests,
+  approveLeaveRequest,
+  rejectLeaveRequest,
+} from "@/lib/actions/leave";
 
-export default function AdminDashboardPage() {
+export default async function AdminDashboardPage() {
+  const [stats, pendingRequests] = await Promise.all([
+    getAdminDashboardStats(),
+    getPendingLeaveRequests(),
+  ]);
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -19,25 +30,25 @@ export default function AdminDashboardPage() {
         <Card>
           <CardContent className="p-6">
             <h3 className="text-sm font-medium text-secondary mb-1">Total Employees</h3>
-            <p className="text-3xl font-semibold text-primary">142</p>
+            <p className="text-3xl font-semibold text-primary">{stats.totalEmployees}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6">
             <h3 className="text-sm font-medium text-secondary mb-1">Present Today</h3>
-            <p className="text-3xl font-semibold text-success">128</p>
+            <p className="text-3xl font-semibold text-success">{stats.presentToday}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6">
             <h3 className="text-sm font-medium text-secondary mb-1">On Leave</h3>
-            <p className="text-3xl font-semibold text-warning">14</p>
+            <p className="text-3xl font-semibold text-warning">{stats.onLeaveToday}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6">
             <h3 className="text-sm font-medium text-secondary mb-1">Pending Requests</h3>
-            <p className="text-3xl font-semibold text-primary">5</p>
+            <p className="text-3xl font-semibold text-primary">{stats.pendingRequests}</p>
           </CardContent>
         </Card>
       </div>
@@ -48,22 +59,36 @@ export default function AdminDashboardPage() {
             <CardTitle>Recent Leave Requests</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col gap-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex justify-between items-center pb-4 border-b border-border last:border-0 last:pb-0">
-                  <div>
-                    <p className="text-sm font-medium text-primary">Alice Johnson</p>
-                    <p className="text-xs text-secondary">Sick Leave • Oct 24 - Oct 25</p>
+            {pendingRequests.length === 0 ? (
+              <p className="text-sm text-secondary py-4 text-center">No pending requests.</p>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {pendingRequests.map((req) => (
+                  <div key={req.id} className="flex justify-between items-center pb-4 border-b border-border last:border-0 last:pb-0">
+                    <div>
+                      <p className="text-sm font-medium text-primary">{req.employeeName}</p>
+                      <p className="text-xs text-secondary">
+                        {req.typeName} &bull;{" "}
+                        {new Date(req.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                        {" – "}
+                        {new Date(req.endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                        {" "}({req.totalDays}d)
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <form action={async () => { "use server"; await rejectLeaveRequest(req.id); }}>
+                        <Button variant="outline" size="sm" className="h-7 text-xs px-2" type="submit">Reject</Button>
+                      </form>
+                      <form action={async () => { "use server"; await approveLeaveRequest(req.id); }}>
+                        <Button size="sm" className="h-7 text-xs px-2" type="submit">Approve</Button>
+                      </form>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="h-7 text-xs px-2">Reject</Button>
-                    <Button size="sm" className="h-7 text-xs px-2">Approve</Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
             <div className="mt-4 pt-2">
-              <Link href="/admin/time-off" className="text-sm text-accent hover:underline">View all requests →</Link>
+              <Link href="/admin/time-off" className="text-sm text-accent hover:underline">View all requests</Link>
             </div>
           </CardContent>
         </Card>

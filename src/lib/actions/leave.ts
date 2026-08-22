@@ -144,3 +144,93 @@ export async function getLeaveTypes() {
     name: t.name,
   }));
 }
+
+export async function getPendingLeaveRequests() {
+  const requests = await prisma.leaveRequest.findMany({
+    where: { status: "pending" },
+    include: { employee: true, leaveType: true },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
+
+  return requests.map((r) => ({
+    id: r.id.toString(),
+    employeeName: `${r.employee.firstName} ${r.employee.lastName}`,
+    typeName: r.leaveType.name,
+    startDate: r.startDate,
+    endDate: r.endDate,
+    totalDays: Number(r.totalDays),
+  }));
+}
+
+export async function approveLeaveRequest(requestId: string) {
+  "use server";
+  const adminUserId = 1;
+  try {
+    await prisma.leaveRequest.update({
+      where: { id: BigInt(requestId) },
+      data: { status: "approved", reviewedAt: new Date(), reviewedBy: BigInt(adminUserId) },
+    });
+    await logActivity({
+      userId: adminUserId,
+      action: "APPROVE_LEAVE",
+      description: `Approved leave request ${requestId}`,
+      entityId: requestId,
+      entityType: "LeaveRequest",
+    });
+    revalidatePath("/admin/dashboard");
+    revalidatePath("/admin/time-off");
+    return { success: true };
+  } catch (e) {
+    console.error(e);
+    return { error: "Failed to approve" };
+  }
+}
+
+export async function rejectLeaveRequest(requestId: string) {
+  "use server";
+  const adminUserId = 1;
+  try {
+    await prisma.leaveRequest.update({
+      where: { id: BigInt(requestId) },
+      data: { status: "rejected", reviewedAt: new Date(), reviewedBy: BigInt(adminUserId) },
+    });
+    await logActivity({
+      userId: adminUserId,
+      action: "REJECT_LEAVE",
+      description: `Rejected leave request ${requestId}`,
+      entityId: requestId,
+      entityType: "LeaveRequest",
+    });
+    revalidatePath("/admin/dashboard");
+    revalidatePath("/admin/time-off");
+    return { success: true };
+  } catch (e) {
+    console.error(e);
+    return { error: "Failed to reject" };
+  }
+}
+
+export async function getAdminDashboardStats() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const [totalEmployees, presentToday, onLeaveToday, pendingRequests] = await Promise.all([
+    prisma.employee.count({ where: { employmentStatus: "active" } }),
+    prisma.attendance.count({
+      where: { workDate: { gte: today, lt: tomorrow }, checkInAt: { not: null } },
+    }),
+    prisma.leaveRequest.count({
+      where: {
+        status: "approved",
+        startDate: { lte: tomorrow },
+        endDate: { gte: today },
+      },
+    }),
+    prisma.leaveRequest.count({ where: { status: "pending" } }),
+  ]);
+
+  return { totalEmployees, presentToday, onLeaveToday, pendingRequests };
+}
