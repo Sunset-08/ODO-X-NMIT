@@ -16,13 +16,11 @@
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
-<<<<<<< HEAD
-    "lucide-react": "^1.33.0",
-=======
     "bcryptjs": "^3.0.3",
->>>>>>> 9c475c6a7d93fdf8c7c14dea525a0c1eaa625954
     "next": "16.3.2",
+    "pg": "^8.23.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "zod": "^4.4.3"
