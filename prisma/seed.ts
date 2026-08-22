@@ -6,7 +6,13 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient();
+import { PrismaPg } from "@prisma/adapter-pg";
+
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+});
+
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log("Seeding Dayflow HRMS...");
@@ -314,11 +320,11 @@ async function main() {
   await prisma.holiday.createMany({
     skipDuplicates: true,
     data: [
-      { name: "Republic Day",            holidayDate: new Date("2026-01-26"), type: "public_holiday", appliesTo: "all", year: 2026, createdBy: adminUser.id },
-      { name: "Holi",                    holidayDate: new Date("2026-03-20"), type: "public_holiday", appliesTo: "all", year: 2026, createdBy: adminUser.id },
-      { name: "Independence Day",        holidayDate: new Date("2026-08-15"), type: "public_holiday", appliesTo: "all", year: 2026, createdBy: adminUser.id },
-      { name: "Company Foundation Day",  holidayDate: new Date("2026-09-01"), type: "company",        appliesTo: "all", year: 2026, createdBy: adminUser.id },
-      { name: "Diwali",                  holidayDate: new Date("2026-10-28"), type: "public_holiday", appliesTo: "all", year: 2026, createdBy: adminUser.id },
+      { name: "Republic Day", holidayDate: new Date("2026-01-26"), type: "public_holiday", appliesTo: "all", year: 2026, createdBy: adminUser.id },
+      { name: "Holi", holidayDate: new Date("2026-03-20"), type: "public_holiday", appliesTo: "all", year: 2026, createdBy: adminUser.id },
+      { name: "Independence Day", holidayDate: new Date("2026-08-15"), type: "public_holiday", appliesTo: "all", year: 2026, createdBy: adminUser.id },
+      { name: "Company Foundation Day", holidayDate: new Date("2026-09-01"), type: "company", appliesTo: "all", year: 2026, createdBy: adminUser.id },
+      { name: "Diwali", holidayDate: new Date("2026-10-28"), type: "public_holiday", appliesTo: "all", year: 2026, createdBy: adminUser.id },
     ],
   });
 
@@ -346,11 +352,11 @@ async function main() {
   // ------------------------------------------------------------------
   await prisma.employmentHistory.createMany({
     data: [
-      { employeeId: adminEmp.id, changeType: "hire", departmentId: deptEngineering.id, designation: "CTO",                      employmentType: "full_time", reportingManagerId: null,        effectiveFrom: new Date("2020-01-01"), changedBy: adminUser.id, note: "Initial hire" },
-      { employeeId: hrEmp.id,    changeType: "hire", departmentId: deptHR.id,          designation: "HR Manager",               employmentType: "full_time", reportingManagerId: adminEmp.id, effectiveFrom: new Date("2021-03-15"), changedBy: adminUser.id, note: "Initial hire" },
-      { employeeId: alice.id,    changeType: "hire", departmentId: deptEngineering.id, designation: "Software Engineer",        employmentType: "full_time", reportingManagerId: adminEmp.id, effectiveFrom: new Date("2022-06-01"), changedBy: adminUser.id, note: "Initial hire" },
-      { employeeId: bob.id,      changeType: "hire", departmentId: deptEngineering.id, designation: "Senior Software Engineer", employmentType: "full_time", reportingManagerId: adminEmp.id, effectiveFrom: new Date("2021-09-01"), changedBy: adminUser.id, note: "Initial hire" },
-      { employeeId: carol.id,    changeType: "hire", departmentId: deptFinance.id,     designation: "Financial Analyst",        employmentType: "full_time", reportingManagerId: adminEmp.id, effectiveFrom: new Date("2023-01-16"), changedBy: adminUser.id, note: "Initial hire" },
+      { employeeId: adminEmp.id, changeType: "hire", departmentId: deptEngineering.id, designation: "CTO", employmentType: "full_time", reportingManagerId: null, effectiveFrom: new Date("2020-01-01"), changedBy: adminUser.id, note: "Initial hire" },
+      { employeeId: hrEmp.id, changeType: "hire", departmentId: deptHR.id, designation: "HR Manager", employmentType: "full_time", reportingManagerId: adminEmp.id, effectiveFrom: new Date("2021-03-15"), changedBy: adminUser.id, note: "Initial hire" },
+      { employeeId: alice.id, changeType: "hire", departmentId: deptEngineering.id, designation: "Software Engineer", employmentType: "full_time", reportingManagerId: adminEmp.id, effectiveFrom: new Date("2022-06-01"), changedBy: adminUser.id, note: "Initial hire" },
+      { employeeId: bob.id, changeType: "hire", departmentId: deptEngineering.id, designation: "Senior Software Engineer", employmentType: "full_time", reportingManagerId: adminEmp.id, effectiveFrom: new Date("2021-09-01"), changedBy: adminUser.id, note: "Initial hire" },
+      { employeeId: carol.id, changeType: "hire", departmentId: deptFinance.id, designation: "Financial Analyst", employmentType: "full_time", reportingManagerId: adminEmp.id, effectiveFrom: new Date("2023-01-16"), changedBy: adminUser.id, note: "Initial hire" },
     ],
   });
 
