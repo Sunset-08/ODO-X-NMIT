@@ -9,6 +9,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmployeeStatusBadge } from "@/components/employees/EmployeeStatusBadge";
 import { MOCK_EMPLOYEES, CURRENT_USER_ID } from "@/lib/mock-data";
+import { SalaryInfoTab } from "@/components/profile/SalaryInfoTab";
 
 /* ─────────────────────────────────────────────────────────────
    Sub-components
@@ -83,9 +84,12 @@ export default function EmployeeProfilePage() {
   const params = useParams();
   const id = params.id as string;
   const [isLoading, setIsLoading] = React.useState(true);
+  const [activeTab, setActiveTab] = React.useState<"resume" | "private" | "salary">("resume");
 
   const employee = MOCK_EMPLOYEES.find((e) => e.id === id);
   const isSelf = id === CURRENT_USER_ID;
+  const currentUser = MOCK_EMPLOYEES.find((e) => e.id === CURRENT_USER_ID);
+  const isAdminOrHR = currentUser?.role === "HR Manager" || currentUser?.department === "Human Resources";
 
   React.useEffect(() => {
     const t = setTimeout(() => setIsLoading(false), 500);
@@ -155,73 +159,121 @@ export default function EmployeeProfilePage() {
         </CardContent>
       </Card>
 
-      {/* Contact */}
-      <div>
-        <h2 className="text-xs font-semibold text-secondary uppercase tracking-wide mb-3">
-          Contact
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Card>
-            <CardContent className="min-h-[84px] flex items-center p-5">
-              <InfoItem icon={Mail} label="Email" value={employee.email} />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="min-h-[84px] flex items-center p-5">
-              <InfoItem icon={Phone} label="Phone" value="+91 9876543210" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="min-h-[84px] flex items-center p-5">
-              <InfoItem icon={MapPin} label="Location" value={employee.location} />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="min-h-[84px] flex items-center p-5">
-              <InfoItem icon={Building2} label="Department" value={employee.department} />
-            </CardContent>
-          </Card>
-        </div>
+      {/* Tabs */}
+      <div className="flex items-center gap-6 border-b border-border">
+        <button
+          onClick={() => setActiveTab("resume")}
+          className={`pb-3 text-sm font-medium transition-colors relative ${
+            activeTab === "resume" ? "text-primary" : "text-secondary hover:text-text"
+          }`}
+        >
+          Resume
+          {activeTab === "resume" && (
+            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab("private")}
+          className={`pb-3 text-sm font-medium transition-colors relative ${
+            activeTab === "private" ? "text-primary" : "text-secondary hover:text-text"
+          }`}
+        >
+          Private Info
+          {activeTab === "private" && (
+            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
+          )}
+        </button>
+        {isAdminOrHR && (
+          <button
+            onClick={() => setActiveTab("salary")}
+            className={`pb-3 text-sm font-medium transition-colors relative ${
+              activeTab === "salary" ? "text-primary" : "text-secondary hover:text-text"
+            }`}
+          >
+            Salary Info
+            {activeTab === "salary" && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
+            )}
+          </button>
+        )}
       </div>
 
-      {/* Job details */}
-      <div>
-        <h2 className="text-xs font-semibold text-secondary uppercase tracking-wide mb-3">
-          Job Details
-        </h2>
-        <Card>
-          <CardContent className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-5">
-            <LabeledValue label="Employee ID" value={employee.id} />
-            <LabeledValue label="Job Title" value={employee.role} />
-            <LabeledValue label="Department" value={employee.department} />
-            <LabeledValue label="Location" value={employee.location} />
-            <LabeledValue label="Employment Type" value="Full-time" />
-            <LabeledValue
-              label="Status"
-              value={
-                employee.status === "leave"
-                  ? "On Leave"
-                  : "Active"
-              }
-            />
-          </CardContent>
-        </Card>
-      </div>
+      {/* Tab Content */}
+      <div className="mt-2 mb-10">
+        {activeTab === "resume" && (
+          <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {/* Contact */}
+            <div>
+              <h2 className="text-xs font-semibold text-secondary uppercase tracking-wide mb-3">
+                Contact
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Card>
+                  <CardContent className="min-h-[84px] flex items-center p-5">
+                    <InfoItem icon={Mail} label="Email" value={employee.email} />
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="min-h-[84px] flex items-center p-5">
+                    <InfoItem icon={Phone} label="Phone" value="+91 9876543210" />
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="min-h-[84px] flex items-center p-5">
+                    <InfoItem icon={MapPin} label="Location" value={employee.location} />
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="min-h-[84px] flex items-center p-5">
+                    <InfoItem icon={Building2} label="Department" value={employee.department} />
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
 
-      {/* Salary — hidden for privacy */}
-      <div>
-        <h2 className="text-xs font-semibold text-secondary uppercase tracking-wide mb-3">
-          Salary Information
-        </h2>
-        <Card>
-          <CardContent className="p-6 flex flex-col items-center justify-center py-10 gap-2 text-center">
-            <EyeOff size={28} className="text-border" strokeWidth={1.5} />
-            <p className="text-sm font-medium text-text">Salary details are private</p>
-            <p className="text-xs text-secondary max-w-xs">
-              Salary information is only visible to the employee and authorized HR personnel.
-            </p>
-          </CardContent>
-        </Card>
+            {/* Job details */}
+            <div>
+              <h2 className="text-xs font-semibold text-secondary uppercase tracking-wide mb-3">
+                Job Details
+              </h2>
+              <Card>
+                <CardContent className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-5">
+                  <LabeledValue label="Employee ID" value={employee.id} />
+                  <LabeledValue label="Job Title" value={employee.role} />
+                  <LabeledValue label="Department" value={employee.department} />
+                  <LabeledValue label="Location" value={employee.location} />
+                  <LabeledValue label="Employment Type" value="Full-time" />
+                  <LabeledValue
+                    label="Status"
+                    value={
+                      employee.status === "leave"
+                        ? "On Leave"
+                        : "Active"
+                    }
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "private" && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <Card>
+              <CardContent className="p-6 flex flex-col items-center justify-center py-10 gap-2 text-center">
+                <EyeOff size={28} className="text-border" strokeWidth={1.5} />
+                <p className="text-sm font-medium text-text">Private Information</p>
+                <p className="text-xs text-secondary max-w-xs">
+                  This section contains private personal details.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {activeTab === "salary" && isAdminOrHR && (
+          <SalaryInfoTab employee={employee} />
+        )}
       </div>
 
     </div>

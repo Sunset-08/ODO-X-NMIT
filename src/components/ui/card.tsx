@@ -38,8 +38,9 @@ export function CardDescription({ className = "", ...props }: React.HTMLAttribut
 }
 
 export function CardContent({ className = "", ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  const hasPaddingOverride = /\b(p-|py-|pt-)/.test(className);
   return (
-    <div className={`p-5 pt-0 ${className}`} {...props} />
+    <div className={`p-5 ${hasPaddingOverride ? "" : "pt-0"} ${className}`} {...props} />
   );
 }
 

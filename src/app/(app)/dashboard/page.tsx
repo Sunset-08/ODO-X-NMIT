@@ -21,17 +21,29 @@ function formatDate(date: Date) {
   });
 }
 
-// Find the current user's name for the greeting
-const currentUser = MOCK_EMPLOYEES.find((e) => e.id === CURRENT_USER_ID);
+// Helper to get initial state
+function getInitialEmployees() {
+  return [...MOCK_EMPLOYEES];
+}
 
 export default function EmployeeHomePage() {
+  const [employees, setEmployees] = React.useState(getInitialEmployees);
   const [isLoading, setIsLoading] = React.useState(true);
+  const currentUser = employees.find((e) => e.id === CURRENT_USER_ID);
 
   // Simulate a brief loading phase (remove when real API is wired)
   React.useEffect(() => {
     const id = setTimeout(() => setIsLoading(false), 800);
     return () => clearTimeout(id);
   }, []);
+
+  function handleStatusChange(newStatus: "present" | "absent" | "leave") {
+    setEmployees((prev) =>
+      prev.map((emp) =>
+        emp.id === CURRENT_USER_ID ? { ...emp, status: newStatus } : emp
+      )
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -47,7 +59,7 @@ export default function EmployeeHomePage() {
       </div>
 
       {/* Attendance widget */}
-      <AttendanceWidget />
+      <AttendanceWidget onStatusChange={handleStatusChange} />
 
       {/* Employee directory */}
       <section aria-labelledby="directory-heading">
@@ -57,13 +69,13 @@ export default function EmployeeHomePage() {
               People
             </h2>
             <p className="text-xs text-secondary mt-0.5">
-              {MOCK_EMPLOYEES.length} employees · click a card to view their profile
+              {employees.length} employees · click a card to view their profile
             </p>
           </div>
         </div>
 
         <EmployeeGrid
-          employees={MOCK_EMPLOYEES}
+          employees={employees}
           currentUserId={CURRENT_USER_ID}
           isLoading={isLoading}
         />

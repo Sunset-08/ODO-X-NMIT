@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MOCK_EMPLOYEES, CURRENT_USER_ID } from "@/lib/mock-data";
+import { SalaryInfoTab } from "@/components/profile/SalaryInfoTab";
 
 type EditableFields = { phone: string; address: string };
 
@@ -131,6 +132,7 @@ export default function MyProfilePage() {
   });
   const [draft, setDraft] = React.useState<EditableFields>(saved);
   const [errors, setErrors] = React.useState<Partial<EditableFields>>({});
+  const [activeTab, setActiveTab] = React.useState<"resume" | "private" | "salary" | "security">("resume");
 
   const employee = MOCK_EMPLOYEES.find((e) => e.id === CURRENT_USER_ID);
 
@@ -205,8 +207,28 @@ export default function MyProfilePage() {
 
             <div className="flex-1 min-w-0">
               <h1 className="text-xl font-semibold text-text">{employee.name}</h1>
-              <p className="text-sm text-secondary mt-0.5">{employee.role}</p>
-              <p className="text-xs text-secondary mt-1">{employee.id} · {employee.department} · {employee.location}</p>
+              <p className="text-sm text-primary font-medium mt-0.5">{employee.role}</p>
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 text-xs">
+                <div className="flex flex-col gap-0.5"><span className="text-secondary font-medium uppercase tracking-wider text-[10px]">Email</span><span className="text-text">{employee.email}</span></div>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-secondary font-medium uppercase tracking-wider text-[10px]">Mobile</span>
+                  {isEditing ? (
+                    <Input
+                      id="phone"
+                      value={draft.phone}
+                      onChange={(e) => { setDraft((d) => ({ ...d, phone: e.target.value })); if (errors.phone) setErrors((err) => ({ ...err, phone: undefined })); }}
+                      placeholder="+91 XXXXX XXXXX"
+                      className="h-7 text-xs px-2 w-full max-w-[150px] mt-0.5"
+                    />
+                  ) : (
+                    <span className="text-text">{saved.phone}</span>
+                  )}
+                </div>
+                <div className="flex flex-col gap-0.5"><span className="text-secondary font-medium uppercase tracking-wider text-[10px]">Company</span><span className="text-text">—</span></div>
+                <div className="flex flex-col gap-0.5"><span className="text-secondary font-medium uppercase tracking-wider text-[10px]">Department</span><span className="text-text">{employee.department}</span></div>
+                <div className="flex flex-col gap-0.5"><span className="text-secondary font-medium uppercase tracking-wider text-[10px]">Manager</span><span className="text-text">—</span></div>
+                <div className="flex flex-col gap-0.5"><span className="text-secondary font-medium uppercase tracking-wider text-[10px]">Location</span><span className="text-text">{employee.location}</span></div>
+              </div>
             </div>
 
             <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
@@ -232,102 +254,149 @@ export default function MyProfilePage() {
         </CardContent>
       </Card>
 
-      {/* Personal Information */}
-      <Card>
-        <CardContent className="p-6">
-          <SectionHeading>Personal Information</SectionHeading>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <LockedField label="Email" value={employee.email} />
+      {/* Tabs */}
+      <div className="flex items-center gap-6 border-b border-border">
+        <button
+          onClick={() => setActiveTab("resume")}
+          className={`pb-3 text-sm font-medium transition-colors relative ${
+            activeTab === "resume" ? "text-primary" : "text-secondary hover:text-text"
+          }`}
+        >
+          Resume
+          {activeTab === "resume" && (
+            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab("private")}
+          className={`pb-3 text-sm font-medium transition-colors relative ${
+            activeTab === "private" ? "text-primary" : "text-secondary hover:text-text"
+          }`}
+        >
+          Private Info
+          {activeTab === "private" && (
+            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab("salary")}
+          className={`pb-3 text-sm font-medium transition-colors relative ${
+            activeTab === "salary" ? "text-primary" : "text-secondary hover:text-text"
+          }`}
+        >
+          Salary Info
+          {activeTab === "salary" && (
+            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab("security")}
+          className={`pb-3 text-sm font-medium transition-colors relative ${
+            activeTab === "security" ? "text-primary" : "text-secondary hover:text-text"
+          }`}
+        >
+          Security
+          {activeTab === "security" && (
+            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
+          )}
+        </button>
+      </div>
 
-            {isEditing ? (
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  value={draft.phone}
-                  onChange={(e) => { setDraft((d) => ({ ...d, phone: e.target.value })); if (errors.phone) setErrors((err) => ({ ...err, phone: undefined })); }}
-                  placeholder="+91 XXXXX XXXXX"
-                  error={errors.phone}
-                />
-              </div>
-            ) : (
-              <InfoRow label="Phone" value={saved.phone} />
-            )}
-
-            <div className="sm:col-span-2">
-              {isEditing ? (
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="address">Address</Label>
-                  <Input
-                    id="address"
-                    value={draft.address}
-                    onChange={(e) => { setDraft((d) => ({ ...d, address: e.target.value })); if (errors.address) setErrors((err) => ({ ...err, address: undefined })); }}
-                    placeholder="Your full address"
-                    error={errors.address}
-                  />
+      <div className="mt-2 mb-10">
+        {activeTab === "resume" && (
+          <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {/* Job Information */}
+            <Card>
+              <CardContent className="p-6">
+                <SectionHeading>Job Information</SectionHeading>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <InfoRow label="Department" value={employee.department} />
+                  <InfoRow label="Job Title" value={employee.role} />
+                  <InfoRow label="Employee ID" value={employee.id} />
+                  <InfoRow label="Location" value={employee.location} />
                 </div>
-              ) : (
-                <InfoRow label="Address" value={saved.address} />
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+              </CardContent>
+            </Card>
 
-      {/* Job Information */}
-      <Card>
-        <CardContent className="p-6">
-          <SectionHeading>Job Information</SectionHeading>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <InfoRow label="Department" value={employee.department} />
-            <InfoRow label="Job Title" value={employee.role} />
-            <InfoRow label="Employee ID" value={employee.id} />
-            <InfoRow label="Location" value={employee.location} />
+            {/* Resume Placeholder */}
+            <Card>
+              <CardContent className="p-6 flex flex-col items-center justify-center py-10 gap-2 text-center bg-surface">
+                <p className="text-sm font-medium text-text">Resume Data Not Available</p>
+                <p className="text-xs text-secondary max-w-xs">
+                  Resume functionality is currently under development.
+                </p>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
+        )}
 
-      {/* Salary */}
-      <Card>
-        <CardContent className="p-6">
-          <SectionHeading>Salary Structure</SectionHeading>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-5 mb-5">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-xs font-medium text-secondary uppercase tracking-wide">Monthly</span>
-              <span className="text-lg font-semibold text-text">₹50,000</span>
-            </div>
-            <div className="flex flex-col gap-0.5">
-              <span className="text-xs font-medium text-secondary uppercase tracking-wide">Annual</span>
-              <span className="text-lg font-semibold text-text">₹6,00,000</span>
-            </div>
-          </div>
-          <div className="border-t border-border pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs font-semibold text-secondary mb-3">Earnings</p>
-              <div className="flex flex-col gap-2">
-                {[["Basic Salary","₹25,000"],["House Rent Allowance","₹12,500"],["Special Allowance","₹12,500"]].map(([l,v]) => (
-                  <div key={l} className="flex justify-between text-sm">
-                    <span className="text-secondary">{l}</span>
-                    <span className="font-medium text-text">{v}</span>
+        {activeTab === "private" && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <Card>
+              <CardContent className="p-6">
+                <SectionHeading>Private Information</SectionHeading>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Left Column */}
+                  <div className="flex flex-col gap-5">
+                    <InfoRow label="Date of Birth" value="—" />
+                    {isEditing ? (
+                      <div className="flex flex-col gap-1">
+                        <Label htmlFor="address">Residing Address</Label>
+                        <Input
+                          id="address"
+                          value={draft.address}
+                          onChange={(e) => { setDraft((d) => ({ ...d, address: e.target.value })); if (errors.address) setErrors((err) => ({ ...err, address: undefined })); }}
+                          placeholder="Your full address"
+                          error={errors.address}
+                        />
+                      </div>
+                    ) : (
+                      <InfoRow label="Residing Address" value={saved.address} />
+                    )}
+                    <InfoRow label="Nationality" value="—" />
+                    <InfoRow label="Personal Email" value={employee.email} />
+                    <InfoRow label="Gender" value="—" />
+                    <InfoRow label="Marital Status" value="—" />
+                    <InfoRow label="Date of Joining" value="—" />
                   </div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-secondary mb-3">Deductions</p>
-              <div className="flex flex-col gap-2">
-                {[["Provident Fund","₹1,800"],["Professional Tax","₹200"]].map(([l,v]) => (
-                  <div key={l} className="flex justify-between text-sm">
-                    <span className="text-secondary">{l}</span>
-                    <span className="font-medium text-text">{v}</span>
+                  
+                  {/* Right Column (Bank Details) */}
+                  <div className="flex flex-col gap-5">
+                    <h3 className="text-sm font-semibold text-text uppercase tracking-wide border-b border-border pb-2 mb-2">Bank Details</h3>
+                    <InfoRow label="Account Number" value="—" />
+                    <InfoRow label="Bank Name" value="—" />
+                    <InfoRow label="IFSC Code" value="—" />
+                    <InfoRow label="PAN No" value="—" />
+                    <InfoRow label="UAN No" value="—" />
+                    <InfoRow label="Employee Code" value={employee.id} />
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
+        )}
 
+        {activeTab === "salary" && (
+          <SalaryInfoTab employee={employee} readonly={true} />
+        )}
+
+        {activeTab === "security" && (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <Card>
+              <CardContent className="p-6 flex flex-col items-center justify-center py-10 gap-3 text-center">
+                <Lock size={32} className="text-secondary/50" />
+                <div>
+                  <p className="text-sm font-semibold text-text">Security Settings Not Available</p>
+                  <p className="text-xs text-secondary max-w-md mt-1">
+                    The backend authentication and security flow is not yet implemented. Once integrated, you will be able to change your password and manage two-factor authentication here.
+                  </p>
+                </div>
+                <Button variant="outline" disabled className="mt-2">Change Password</Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -143,3 +143,34 @@ export const MOCK_EMPLOYEES: Employee[] = [
     location: "Hyderabad",
   },
 ];
+
+export type AttendanceRecord = {
+  id: string;
+  employeeId: string;
+  date: string; // ISO date string YYYY-MM-DD
+  status: "present" | "absent" | "half-day" | "leave";
+  checkInTime: string | null; // ISO datetime string
+  checkOutTime: string | null; // ISO datetime string
+  workHours: number; // in hours
+};
+
+export const MOCK_ATTENDANCE: AttendanceRecord[] = [
+  {
+    id: "att-1",
+    employeeId: "DF20220001",
+    date: new Date().toISOString().split("T")[0],
+    status: "present",
+    checkInTime: new Date(new Date().setHours(9, 0, 0, 0)).toISOString(),
+    checkOutTime: null,
+    workHours: 0,
+  },
+  {
+    id: "att-2",
+    employeeId: "DF20220004",
+    date: new Date().toISOString().split("T")[0],
+    status: "present",
+    checkInTime: new Date(new Date().setHours(9, 30, 0, 0)).toISOString(),
+    checkOutTime: null,
+    workHours: 0,
+  },
+];
