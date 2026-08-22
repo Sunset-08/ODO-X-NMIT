@@ -1,11 +1,12 @@
+import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
-// Dayflow HRMS -- Prisma 7 configuration
-// For local development, create a .env file at the project root:
-//   DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/dayflow"
-
 export default defineConfig({
+  schema: "prisma/schema.prisma",
+  migrations: {
+    path: "prisma/migrations",
+  },
   datasource: {
-    url: process.env.DATABASE_URL as string,
+    url: process.env["DATABASE_URL"],
   },
 });
